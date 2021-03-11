@@ -1,0 +1,33 @@
+{
+  "name": "servicespace",
+  "version": "1.0.0",
+  "description": "A website where Service Providers can put up their offers, and customers in need of a particular service can hire a service provider.",
+  "main": "app.js",
+  "scripts": {
+    "test": "nodemon app.js",
+    "start": "node app.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/balalm10/servicespace.git"
+  },
+  "author": "balalm10",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/balalm10/servicespace/issues"
+  },
+  "homepage": "https://github.com/balalm10/servicespace#readme",
+  "dependencies": {
+    "connect-flash": "^0.1.1",
+    "express": "^4.17.1",
+    "express-session": "^1.17.1",
+    "mongoose": "^5.11.8",
+    "passport": "^0.4.1",
+    "passport-local": "^1.0.0",
+    "passport-local-mongoose": "^6.0.1",
+    "path": "^0.12.7"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.6"
+  }
+}
