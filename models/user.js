@@ -13,7 +13,6 @@ var UserSchema = new mongoose.Schema({
     },
     spdetails : {
         type: {
-            _id: false,
             services: [{
                 type:mongoose.Schema.Types.ObjectId,
                 ref :"service"
