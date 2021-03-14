@@ -1,0 +1,79 @@
+html,body{
+	background:linear-gradient(to right, #03e9f4 0%, #330867 100%);
+}
+
+.carousel-indicators li {
+    display: inline-block;
+    width: 36px;
+    height: 4px;
+    margin: 4px;
+    text-indent: 0;
+    cursor: pointer;
+    border: none;
+    background-color: #03e9f4;
+}
+.carousel-indicators .active {
+    width: 36px;
+    height: 4px;
+    margin: 4px;
+    background-color: #03e9f4;
+}
+
+
+.welcome{
+	border-radius: 20px;
+	background-color: #000118;
+	margin: 0 auto;
+	padding-top: 4rem;
+}
+
+
+.welcome hr{
+	margin: 0 auto;
+    margin-top: 20px;
+    margin-bottom: 20px;
+    width: 70%;
+    border: 0;
+    height: 1px;
+    background-image: linear-gradient(to right, rgba(0, 1, 24, 0), rgba(0, 1, 24, 0.75), rgba(0, 1, 24, 0));
+}
+
+
+	
+.info{
+	padding: 2rem;
+	align-items: center;
+
+}
+
+hr {
+    margin: 0 auto;
+    margin-top: 20px;
+    margin-bottom: 20px;
+    width: 50%;
+    border: 0;
+    height: 1px;
+    background-image: linear-gradient(to right, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.75), rgba(255, 255, 255, 0));
+}
+
+footer{
+	padding-top: 2rem;
+	background-color: #000118;
+	color: #03e9f4;
+}
+
+/* @media (max-width: 992px){
+	
+}
+
+@media (max-width: 768px){
+	
+}
+
+@media (max-width: 576px){
+	
+} */
+
+[class *= "col-"]{
+	padding: 1rem;
+}

@@ -55,7 +55,7 @@ function isLoggedIn(req, res, next){
     if(req.isAuthenticated()) {
         return next();
     }
-    req.flash("error_msg", 'Please log in first');
+    req.flash("warning", 'Please log in first');
     res.redirect("/signin");
 }
 
@@ -63,7 +63,7 @@ function isNotLoggedIn(req, res, next){
     if(!req.isAuthenticated()) {
         return next();
     }
-    req.flash("error_msg", 'Your are Logged In');
+    req.flash("warning", 'You are Logged In');
     res.redirect("/dashboard");
 }
 
@@ -71,8 +71,10 @@ function isNotLoggedIn(req, res, next){
 
 // GLOBAL VARS APP SCOPE
 app.use((req, res, next) =>{
-    res.locals.success_msg = req.flash('success_msg');
-    res.locals.error_msg = req.flash('error_msg');
+    res.locals.success = req.flash('success');
+    res.locals.error = req.flash('error');
+    res.locals.warning = req.flash('warning');
+    res.locals.info = req.flash('info');
     next();
 });
 
@@ -85,8 +87,7 @@ const UTYPE = {
 
 app.get('/', (req, res) => {
     console.log("Welcome")
-    req.flash("error_msg", "Welcome");
-    res.sendFile(path.join(__dirname, 'home.html'))
+    res.render('home', {user: req.user, iLog: req.isAuthenticated()})
 });
 
 
@@ -94,11 +95,12 @@ app.get('/', (req, res) => {
 
 app.get('/signin', isNotLoggedIn,(req, res) =>{
     res.set('Cache-Control', 'no-cache, private, no-store, must-revalidate, max-stale=0, post-check=0, pre-check=0');
-    res.sendFile(path.join(__dirname, 'login.html'))
+    res.render('signin', {user: req.user, iLog: req.isAuthenticated()})
     //res.render('login', {default: "login"});
 });
 
 app.get('/dashboard', isLoggedIn, (req, res) => {
+    res.set('Cache-Control', 'no-cache, private, no-store, must-revalidate, max-stale=0, post-check=0, pre-check=0');
     res.send(`<h1>Welcome ${req.user.name}</h1><hr><br>
     <p>User Object retrieved from session : ${req.user}<br><br>
     <a href="/logout">Logout</a></p>`)
@@ -111,13 +113,13 @@ app.post("/login", isNotLoggedIn, passport.authenticate("local", {
     failureFlash: true
 }),(req, res) => {
     console.log(req.user)
-    req.flash("success_msg", "Successfully logged in");
+    req.flash("success", `Logged In. Welcome ${req.user.name}!`);
 });
 
 //Logout handle
 app.get('/logout', isLoggedIn,(req, res) => {
     req.logout();
-    req.flash('success_msg','You are logged out');
+    req.flash('info','You are logged out');
     res.redirect('/signin');
 });
 
@@ -144,14 +146,14 @@ app.post('/signup', (req, res) => {
                 (err, user) => {
                     if(err){
                         console.log(err)
-                        req.flash("error_msg", 'Could not create user account');
+                        req.flash("error", `Could not create account: ${err.message}`);
                         res.redirect('/signin');
                         return;
                     }
                     else{
                         console.log('Created User', user)
                         passport.authenticate("local")(req, res, function(){
-                            req.flash("success_msg", "Welcome " + req.user.name + "!");
+                            req.flash("success", `Account Created. Welcome ${req.user.name}!`);
                             res.redirect("/dashboard");
                         });
                 };
@@ -209,7 +211,7 @@ app.post('/createservice', (req, res) => {
             user.findOneAndUpdate({'_id':req.user._id}, { $addToSet: {"spdetails.services": created_service._id} }, function(err, user) {
                 if(err) {
                     console.log(err);
-                    cb("Could not add service")
+                    cb('Could not add service')
                 }
                 else {
                     console.log('Added Service to List');
@@ -221,12 +223,12 @@ app.post('/createservice', (req, res) => {
         
     waterfall(createService, function(err, created_service){
         if(err) {
-            req.flash("error_msg", err);
+            req.flash("error", err);
             console.log('Error in waterfall', err);
             res.json({"error": true, "message": err})
             return;
         }
-        req.flash('success_msg', 'Added Service successfully');
+        req.flash('info', 'Added Service successfully');
         console.log('Success :', 'Added Service successfully');
         res.json({"error": false, "message": created_service})
         return;
