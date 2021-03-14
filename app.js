@@ -77,8 +77,11 @@ app.use((req, res, next) =>{
 });
 
 // GLOBAL VARS LOCAL SCOPE
-const SERVICE_PROVIDER = 'Service Provider'
-const CUSTOMER = 'Customer'
+const UTYPE = {
+    SERVICE_PROVIDER: 'Service Provider',
+    CUSTOMER: 'Customer'
+}
+
 
 app.get('/', (req, res) => {
     console.log("Welcome")
@@ -131,7 +134,7 @@ app.post('/signup', (req, res) => {
                     name: req.body.name,
                     dob: req.body.dob,
                     utype: req.body.utype,
-                    spdetails: (req.body.utype === CUSTOMER) ? {} : {
+                    spdetails: (req.body.utype === UTYPE.CUSTOMER) ? {} : {
                         services: [],
                         phone: req.body.phone,
                         email: req.body.email
@@ -166,7 +169,7 @@ app.post('/createservice', (req, res) => {
 
     const createService = [
         function verifyUserIsServiceProvider(cb) {
-            if (req.user.utype === SERVICE_PROVIDER) {
+            if (req.user.utype === UTYPE.SERVICE_PROVIDER) {
                 console.log('User is service Provider')
                 cb(null);
             }
@@ -220,7 +223,7 @@ app.post('/createservice', (req, res) => {
         if(err) {
             req.flash("error_msg", err);
             console.log('Error in waterfall', err);
-            res.json({"error": true, "message": "Could not add Service"})
+            res.json({"error": true, "message": err})
             return;
         }
         req.flash('success_msg', 'Added Service successfully');
