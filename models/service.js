@@ -24,4 +24,5 @@ var ServiceSchema = new mongoose.Schema({
 });
 
 ServiceSchema.plugin(AutoIncrement, {inc_field:"s_id"})
+
 module.exports = mongoose.model("service", ServiceSchema);

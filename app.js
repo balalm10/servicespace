@@ -9,13 +9,14 @@ const service = require('./models/service');
 const waterfall = require('async-waterfall');
 const path = require('path')
 const LocalStrategy = require("passport-local");
+const bodyParser  =   require("body-parser");
 const app = express();
 //Passport config
 //require('./config/passport')(passport);
 
 //swapped with DB config of MONGO ATLAS
 //DB config
-mongoose.connect('mongodb://127.0.0.1/servicespace', { useNewUrlParser: true, useUnifiedTopology: true, useCreateIndex: true});
+mongoose.connect('mongodb://127.0.0.1/servicespace', { useNewUrlParser: true, useUnifiedTopology: true, useCreateIndex: true, useFindAndModify: false});
 
 //EJS
 //app.use(expressLayouts);
@@ -23,7 +24,8 @@ app.set('view engine', 'ejs');
 app.use(express.static(__dirname + "/public"))
 
 //BodyParser
-app.use(express.urlencoded({extended: true}));
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({"extended": true}));
 
 
 //Express Session middleware
@@ -85,7 +87,7 @@ app.get('/', (req, res) => {
 });
 
 
-/*------------ Routes ------------------------*/
+/*---------------------------------- Website Routes ----------------------------*/
 
 app.get('/signin', isNotLoggedIn,(req, res) =>{
     res.set('Cache-Control', 'no-cache, private, no-store, must-revalidate, max-stale=0, post-check=0, pre-check=0');
@@ -99,9 +101,29 @@ app.get('/dashboard', isLoggedIn, (req, res) => {
     <a href="/logout">Logout</a></p>`)
 })
 
+app.post("/login", isNotLoggedIn, passport.authenticate("local", {
+    successRedirect: "/dashboard",
+    failureRedirect: '/signin',
+    successFlash: true,
+    failureFlash: true
+}),(req, res) => {
+    console.log(req.user)
+    req.flash("success_msg", "Successfully logged in");
+});
+
+//Logout handle
+app.get('/logout', isLoggedIn,(req, res) => {
+    req.logout();
+    req.flash('success_msg','You are logged out');
+    res.redirect('/signin');
+});
+
+/*-------------------------------- Stateless Routes -----------------------------*/
+
 
 app.post('/signup', (req, res) => {
 
+    console.log('Received request')
     console.log(req.body)
 
     user.register(new user({
@@ -120,14 +142,13 @@ app.post('/signup', (req, res) => {
                     if(err){
                         console.log(err)
                         req.flash("error_msg", 'Could not create user account');
-                        res.redirect('signup');
+                        res.redirect('/signin');
                         return;
                     }
                     else{
-                        console.log(user)
+                        console.log('Created User', user)
                         passport.authenticate("local")(req, res, function(){
-                            
-                            req.flash("success_msg","Welcome " + req.user.name + " ");
+                            req.flash("success_msg", "Welcome " + req.user.name + "!");
                             res.redirect("/dashboard");
                         });
                 };
@@ -138,12 +159,21 @@ app.post('/createservice', (req, res) => {
 
     console.log(req.body)
 
+    // If stateless call (no session)
+    if(!req.user) {
+        req.user = req.body.user
+    }
+
     const createService = [
         function verifyUserIsServiceProvider(cb) {
-            if (req.user.utype == SERVICE_PROVIDER) {
+            if (req.user.utype === SERVICE_PROVIDER) {
+                console.log('User is service Provider')
                 cb(null);
             }
-            cb('User is not a Service Provider')
+            else {
+                // err: true  (String evaluates to true)
+                cb('User is not a Service Provider')    
+            }
         },
         function createNewService(cb) {
             console.log('In create service');
@@ -160,61 +190,45 @@ app.post('/createservice', (req, res) => {
         },
         function addServiceToDB(service_obj, cb) {
             console.log('Saving service');
-            service_obj.save((err, service_obj) => {
+            service_obj.save((err, created_service) => {
                 if(err) {	
                     console.log(err);
                     cb('Error while creating service')
                 }
                 else {
                     console.log("Created Service");
-                    cb(null, service_obj)
+                    cb(null, created_service)
                 }
             });
         },
-        function linkServiceToServiceProvider(service_obj, cb) {
+        function linkServiceToServiceProvider(created_service, cb) {
             console.log('Linking Service to SP');
-            user.findOneAndUpdate({'_id':req.user._id}, { $addToSet: {"spdetails.services": service_obj._id} }, function(err, user) {
+            user.findOneAndUpdate({'_id':req.user._id}, { $addToSet: {"spdetails.services": created_service._id} }, function(err, user) {
                 if(err) {
                     console.log(err);
                     cb("Could not add service")
                 }
                 else {
                     console.log('Added Service to List');
-                    cb(null, 'Added Service to List')
+                    cb(null, created_service)
                 }
             });
         }	
     ];
         
-    waterfall(createService, function(err, res){
-        if(err)
-        {
+    waterfall(createService, function(err, created_service){
+        if(err) {
             req.flash("error_msg", err);
             console.log('Error in waterfall', err);
+            res.json({"error": true, "message": "Could not add Service"})
             return;
         }
-        req.flash('success_msg', res);
-        console.log('Success', res);
+        req.flash('success_msg', 'Added Service successfully');
+        console.log('Success :', 'Added Service successfully');
+        res.json({"error": false, "message": created_service})
         return;
     });
-    
-});
 
-app.post("/login", isNotLoggedIn, passport.authenticate("local", {
-    successRedirect: "/dashboard",
-    failureRedirect: '/signin',
-    successFlash: true,
-    failureFlash: true
-}),(req, res) => {
-    console.log(req.user)
-    req.flash("success_msg", "Successfully logged in");
-});
-
-//Logout handle
-app.get('/logout', isLoggedIn,(req, res) => {
-    req.logout();
-    req.flash('success_msg','You are logged out');
-    res.redirect('/signin');
 });
 
 
