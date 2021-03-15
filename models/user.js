@@ -15,7 +15,7 @@ var UserSchema = new mongoose.Schema({
         type: {
             services: [{
                 type:mongoose.Schema.Types.ObjectId,
-                ref :"service"
+                ref :"Service"
             }],
             phone: String,
             email: String
@@ -30,4 +30,4 @@ var UserSchema = new mongoose.Schema({
 
 UserSchema.plugin(passportLocalMongoose);
 
-module.exports = mongoose.model("user", UserSchema);
+module.exports = mongoose.model("User", UserSchema);

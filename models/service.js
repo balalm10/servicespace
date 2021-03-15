@@ -19,11 +19,11 @@ var ServiceSchema = new mongoose.Schema({
     avg_rating: Number,
     provider: {
         type:mongoose.Schema.Types.ObjectId,
-        ref :"user"
+        ref :"User"
     }
 
 });
 
 ServiceSchema.plugin(AutoIncrement, {inc_field:"s_id"})
 
-module.exports = mongoose.model("service", ServiceSchema);
+module.exports = mongoose.model("Service", ServiceSchema);

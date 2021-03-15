@@ -1,5 +1,4 @@
 const express = require('express');
-//const expressLayouts = require('express-ejs-layouts');
 const mongoose = require('mongoose');
 const flash = require('connect-flash');
 const session = require('express-session');
@@ -22,7 +21,6 @@ app.use(express.static(__dirname + '/public'))
 //BodyParser
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ 'extended': true }));
-
 
 //Express Session middleware
 app.use(session({
@@ -94,6 +92,7 @@ app.get('/signin', isNotLoggedIn, (req, res) => {
 });
 
 app.get('/profile', isLoggedIn, (req, res) => {
+    console.log(req.user)
     res.set('Cache-Control', 'no-cache, private, no-store, must-revalidate, max-stale=0, post-check=0, pre-check=0');
     res.render('profile', { user: req.user, iLog: req.isAuthenticated() })
     // res.send(`<h1>Welcome ${req.user.name}</h1><hr><br>
@@ -196,27 +195,29 @@ app.post('/createservice', (req, res) => {
                     cb('Error while creating service')
                 }
                 else {
-                    console.log('Created Service');
+                    console.log('Created Service', created_service);
                     cb(null, created_service)
                 }
             });
         },
         function linkServiceToServiceProvider(created_service, cb) {
             console.log('Linking Service to SP');
-            user.findOneAndUpdate({ '_id': req.user._id }, { $addToSet: { 'spdetails.services': created_service._id } }, function (err, user) {
+            user.findByIdAndUpdate(req.user._id, 
+            { $addToSet: { 'spdetails.services': created_service._id} }, { new: true })
+            .populate({path: 'spdetails.services', model: 'Service'}).exec((err, user_obj) => {
                 if (err) {
                     console.log(err);
                     cb('Could not add service')
                 }
                 else {
-                    console.log('Added Service to List');
-                    cb(null, created_service)
+                    console.log('Added Service to List', user_obj);
+                    cb(null, user_obj.spdetails.services)
                 }
             });
         }
     ];
 
-    waterfall(createService, function (err, created_service) {
+    waterfall(createService, function (err, services) {
         if (err) {
             req.flash('error', err);
             console.log('Error in waterfall', err);
@@ -225,12 +226,91 @@ app.post('/createservice', (req, res) => {
         }
         req.flash('info', 'Added Service successfully');
         console.log('Success :', 'Added Service successfully');
-        res.json({ 'error': false, 'message': created_service })
+        res.json({ 'error': false, 'message': services })
         return;
     });
 
 });
 
+app.delete('/removeservice', (req, res) => {
+
+    console.log(req.body)
+
+    // If stateless call (no session)
+    if (!req.user) {
+        req.user = req.body.user
+    }
+
+    const deleteService = [
+        function verifyUserIsServiceProvider(cb) {
+            if (req.user.utype === UTYPE.SERVICE_PROVIDER) {
+                console.log('User is service Provider')
+                cb(null);
+            }
+            else {
+                // err: true  (String evaluates to true)
+                cb('User is not a Service Provider')
+            }
+        },
+        function removeFromUserDb(cb) {
+            user.findByIdAndUpdate(req.user._id, 
+            { $pull: { 'spdetails.services': mongoose.Types.ObjectId(req.body.service_id)} }, { new: true })
+            .populate({path: 'spdetails.services', model: 'Service'}).exec((err, user_obj) => {
+                if (err) {
+                    console.log(err);
+                    cb(err.message)
+                }
+                else {
+                    console.log('Removed Service from List', user_obj);
+                    cb(null, user_obj.spdetails.services)
+                }
+            });
+        },
+        function removeFromServiceDb(services, cb) {
+            console.log('In remove service');
+            service.deleteOne({'_id': req.body.service_id}, (err, del_service) => {
+                if(err) {
+                    console.log("Error",err)
+                    cb(err.message)
+                } else {
+                    console.log("Deleted Service", del_service)
+                    cb(null, services)
+                }
+            })
+        }
+    ];
+
+    waterfall(deleteService, function (err, services) {
+        if (err) {
+            req.flash('error', err);
+            console.log('Error in waterfall', err);
+            res.json({ 'error': true, 'message': err })
+            return;
+        }
+        req.flash('info', 'Removed Service successfully');
+        console.log('Success :', 'Removed Service successfully');
+        res.json({ 'error': false, 'message': services })
+        return;
+    });
+
+});
+
+app.get('/getservices/:user_id', (req, res) => {
+
+    user.findById(req.params.user_id).populate({path: 'spdetails.services', model: 'Service'})
+        .exec((err, user_obj) => {
+            if(err) {
+                console.log(err)
+                res.json({'error': false, 'message': err.message})
+            } else {
+                if(user_obj.utype === UTYPE.SERVICE_PROVIDER) {
+                    res.json({'error': false, 'message': user_obj.spdetails.services})
+                } else {
+                    res.json({ 'error': true, 'message': 'User is not a Service Provider' })
+                }
+            }
+        });
+});
 
 const PORT = 3000;
 
