@@ -11,15 +11,16 @@ var ServiceSchema = new mongoose.Schema({
         enum: ['/ hour','/ day','/ job'],
         default: '/ hour'
     },
-    ratings: [
-        {
-            _id: false,
-            username: String,
-            rating: Number
-        }
-    ],
+    ratings: [{
+        _id: false,
+        username: String,
+        rating: Number
+    }],
     avg_rating: Number,
-    sp_name: String
+    provider: {
+        type:mongoose.Schema.Types.ObjectId,
+        ref :"user"
+    }
 
 });
 

@@ -184,7 +184,7 @@ app.post('/createservice', (req, res) => {
                 fee_t: req.body.fee_t,
                 ratings: [],
                 avg_rating: 0,
-                sp_name: req.user.name
+                provider: req.user._id
             });
             return cb(null, service_obj);
         },

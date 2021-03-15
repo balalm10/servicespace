@@ -119,7 +119,7 @@
 						<div class="form-group">
 							<label for="signup_confirm_password" class="sr-only">Confirm Password</label>
 							<input type="password" class="form-control" id="signup_confirm_password"
-								name="confirm_password" placeholder="Confirm Password" required />
+								placeholder="Confirm Password" required />
 						</div>
 						<div class="form-row form-group">
 							<div class="col-sm-6 form-group">
@@ -137,7 +137,7 @@
 
 						<div class="form-group">
 							<center>
-								<span class="form-text text-muted mb-2">
+								<span class="form-text mb-2">
 									What will be your role on ServiceSpace?
 								</span>
 							</center>
@@ -159,35 +159,20 @@
 									Providers.</small>
 							</center>
 							<hr />
+							<center>
+								<small class="form-text text-muted mb-2">You'll be able to add services to your profile
+									once
+									you sign up. <br> For now, we only need your official contacts.
+								</small>
+							</center>
 							<div class="form-group form-row">
 								<div class="col">
-									<input type="text" class="form-control" name="service"
-										placeholder="Service Offered" />
-								</div>
-								<div class="col">
-									<div class="input-group">
-										<input type="number" class="form-control" name="fee" placeholder="Fee" />
-										<div class="input-group-append">
-											<button class="btn btn-outline-secondary dropdown-toggle"
-												id="rate-dropdown-button" type="button" data-toggle="dropdown">
-												/ hour
-											</button>
-											<div class="dropdown-menu" id="rate-dropdown-menu">
-												<a class="dropdown-item" href="#">/ hour</a>
-												<a class="dropdown-item" href="#">/ day</a>
-												<a class="dropdown-item" href="#">/ job</a>
-											</div>
-										</div>
-									</div>
-								</div>
-							</div>
-							<div class="form-group form-row">
-								<div class="col">
-									<input type="email" class="form-control" name="email" placeholder="Email" />
+									<input type="email" class="form-control" name="email"
+										placeholder="Official Email" />
 								</div>
 								<div class="col">
 									<input class="form-control" type="tel" id="phone" name="phone" pattern="[0-9]{10}"
-										title="Phone number should be exactly 10 digits" placeholder="Phone" />
+										title="Phone number should be exactly 10 digits" placeholder="Official Phone" />
 								</div>
 							</div>
 							<div class="form-group form-check">
@@ -231,11 +216,6 @@
 
 		// document.getElementById("phone").oninvalid = (event) => { event.target.setCustomValidity('Phone number should be exactly 10 digits') };
 
-		$("#rate-dropdown-menu a").click(function () {
-			let val = $(this).text();
-			$("#rate-dropdown-button").html(val);
-		});
-
 		$("#sp_checkbox label input").click(function () {
 			var sp_form = document.getElementById("sp_form");
 			const utype = $('input[type="radio"][name="utype"]:checked').val();
@@ -260,17 +240,6 @@
 			} else {
 				$("#create_acc_btn").prop("disabled", true);
 			}
-		});
-
-		$("#signp_form").submit(function (eventObj) {
-			let fee_t = $("#rate-dropdown-button").html()
-
-			$("<input />").attr("type", "hidden")
-				.attr("name", "fee_t")
-				.attr("value",
-					let)
-				.appendTo("#signp_form");
-			return true;
 		});
 
 	</script>
