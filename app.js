@@ -103,12 +103,9 @@ app.get('/profile', isLoggedIn, (req, res) => {
 app.post('/login', isNotLoggedIn, passport.authenticate('local', {
     successRedirect: '/profile',
     failureRedirect: '/signin',
-    successFlash: true,
+    successFlash: 'Welcome Back!',
     failureFlash: true
-}), (req, res) => {
-    console.log(req.user)
-    req.flash('success', `Logged In. Welcome ${req.user.name}!`);
-});
+}));
 
 //Logout handle
 app.get('/logout', isLoggedIn, (req, res) => {
@@ -219,12 +216,10 @@ app.post('/createservice', (req, res) => {
 
     waterfall(createService, function (err, services) {
         if (err) {
-            req.flash('error', err);
             console.log('Error in waterfall', err);
             res.json({ 'error': true, 'message': err })
             return;
         }
-        req.flash('info', 'Added Service successfully');
         console.log('Success :', 'Added Service successfully');
         res.json({ 'error': false, 'message': services })
         return;
@@ -282,12 +277,10 @@ app.delete('/removeservice', (req, res) => {
 
     waterfall(deleteService, function (err, services) {
         if (err) {
-            req.flash('error', err);
             console.log('Error in waterfall', err);
             res.json({ 'error': true, 'message': err })
             return;
         }
-        req.flash('info', 'Removed Service successfully');
         console.log('Success :', 'Removed Service successfully');
         res.json({ 'error': false, 'message': services })
         return;
