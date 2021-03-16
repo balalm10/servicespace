@@ -131,6 +131,13 @@ app.post('/signup', (req, res) => {
             services: [],
             phone: req.body.phone,
             email: req.body.email
+        },
+        social_media: {
+            website: null,
+            facebook: null,
+            twitter: null,
+            linkedin: null,
+            instagram: null
         }
     }),
         req.body.password,
