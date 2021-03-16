@@ -18,7 +18,6 @@
   },
   "homepage": "https://github.com/balalm10/servicespace#readme",
   "dependencies": {
-    "ajax": "0.0.4",
     "async-waterfall": "^0.1.5",
     "body-parser": "^1.19.0",
     "connect-flash": "^0.1.1",
