@@ -8,17 +8,17 @@
         <div class="collapse navbar-collapse" id="navbarSupportedContent">
             <ul class="navbar-nav ml-auto">
                 <li class="nav-item">
-                    <a class="nav-link" href="#">Explore</a>
+                    <a class="nav-link" href="/feed">Explore</a>
                 </li>
                 <li class="nav-item active">
                     <% if (isLoggedIn) { %>
-                        <% if (profile) { %>
-                            <a class="nav-link" href="/logout">Log Out</a>
-                        <% } else { %>
-                            <a class="nav-link" href="/profile">Profile</a>
-                        <% } %>
+                    <% if (profile) { %>
+                    <a class="nav-link" href="/logout">Log Out</a>
                     <% } else { %>
-                        <a class="nav-link" href="/signin">Sign In</a>
+                    <a class="nav-link" href="/profile">Profile</a>
+                    <% } %>
+                    <% } else { %>
+                    <a class="nav-link" href="/signin">Sign In</a>
                     <% } %>
                 </li>
             </ul>

@@ -114,6 +114,17 @@ app.get('/logout', isLoggedIn, (req, res) => {
     res.redirect('/signin');
 });
 
+app.get('/feed', (req, res) => {
+    service.find({}).populate({path: 'provider', model: 'User'}).exec((err, data) => {
+        if(err) {
+            console.log('Error while fetching services for feed')
+        } else {
+            console.log(data)
+            res.render('feed', { user: req.user, iLog: req.isAuthenticated(), services: data })
+        }
+    })
+})
+
 /*-------------------------------- Stateless Routes -----------------------------*/
 
 
