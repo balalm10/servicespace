@@ -16,6 +16,7 @@
 </head>
 
 <body>
+    <%- include('./partials/scripts.ejs') %>
     <%- include('./partials/navbar.ejs', {isLoggedIn: iLog, profile: false}); %>
 
     <div id="slides" class="carousel slide" data-ride="carousel">
@@ -97,7 +98,6 @@
         </div>
     </footer>
 
-    <%- include('./partials/scripts.ejs') %>
 </body>
 
 </html>

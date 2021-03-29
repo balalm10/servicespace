@@ -14,52 +14,63 @@
 </head>
 
 <body>
+    <%- include('./partials/scripts.ejs') %>
     <%- include('./partials/navbar.ejs', {isLoggedIn: iLog, profile: false}); %>
 
     <% if (services) { %>
-    <div class="container">
-        <div class="row gutters-sm">
-            <div class="col mb-3 mt-3">
-                <div class="card h-100">
-                    <div class="card-header container-fluid">
-                        <h3 class="float-left">Trending Services</h3>
-                    </div>
-                    <div class="card-body align-items-center container-fluid">
-                        <div class="d-flex mb-3">
-                            <ul class="list-group list-group-flush w-100 services-list">
-                                <% services.forEach(service => { %>
-                                <li class="list-group-item">
-                                    <div class="card">
-                                        <div class="card-body">
-                                            <h4 class="card-title"><%= service.name %></h4>
-                                            <p class="card-text"><%= service.desc %></p>
-                                            <h5 class="float-left">&#8377; &nbsp;
-                                                <%= service.fee + ' ' + service.fee_t %>
-                                            </h5>
-                                        </div>
-                                        <div class="card-footer">
-                                            <div class="d-flex justify-content-between text-muted">
-                                                <div class="float-left">Service Provider</div>
-                                                <div class="float-right"><%= service.provider.spdetails.phone %></div>
-                                            </div>
-                                            <div class="d-flex justify-content-between text-muted">
-                                                <div class="float-left"><b><%= service.provider.name %></b></div>
-                                                <div class="float-right"><%= service.provider.spdetails.email %></div>
-                                            </div>
-                                        </div>
+    <div class="container mt-3">
+        <ul class="nav nav-pills d-flex justify-content-center" role="tablist">
+            <li class="nav-item">
+                <a class="nav-link active" href="#pills-trending" data-toggle="pill" role="tab">Trending</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="#pills-highest-rated" data-toggle="pill" role="tab">Highest Rated</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link disabled" href="#pills-personalized" data-toggle="pill" role="tab">Personalized</a>
+            </li>
+        </ul>
+        <div class="tab-content">
+            <div class="tab-pane fade show active" id="pills-trending" role="tabpanel">
+                <ul class="list-group list-group-flush services-list">
+                    <% services.forEach(service => { %>
+                    <li class="list-group-item border-0">
+                        <div class="card">
+                            <div class="card-body">
+                                <h4 class="card-title"><%= service.name %></h4>
+                                <p class="card-text"><%= service.desc %></p>
+                                <h5 class="float-left">&#8377; &nbsp;
+                                    <%= service.fee + ' ' + service.fee_t %>
+                                </h5>
+                            </div>
+                            <div class="card-footer">
+                                <div class="d-flex justify-content-between text-muted">
+                                    <div class="float-left">Service Provider</div>
+                                    <div class="float-right"><%= service.provider.spdetails.phone %>
                                     </div>
-                                </li>
-                                <% }); %>
-                            </ul>
+                                </div>
+                                <div class="d-flex justify-content-between text-muted">
+                                    <div class="float-left"><b><%= service.provider.name %></b>
+                                    </div>
+                                    <div class="float-right"><%= service.provider.spdetails.email %>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                    </div>
-                </div>
+                    </li>
+                    <% }); %>
+                </ul>
+            </div>
+            <div class="tab-pane fade" id="pills-highest-rated" role="tabpanel">
+                ...
+            </div>
+            <div class="tab-pane fade" id="pills-personalized" role="tabpanel">
+                ...
             </div>
         </div>
     </div>
     <% } %>
 
-    <%- include('./partials/scripts.ejs') %>
 </body>
 
 </html>

@@ -20,9 +20,9 @@
 </head>
 
 <body>
+    <%- include('./partials/scripts.ejs') %>
     <%- include('./partials/navbar.ejs', {isLoggedIn: iLog, profile: true}); %>
     <%- include('./partials/messages.ejs'); %>
-
 
     <div class="container">
         <div class="main-body">
@@ -210,8 +210,6 @@
             </div>
         </div>
     </div>
-
-    <%- include('./partials/scripts.ejs') %>
 
     <script>
         $("#rate-dropdown-menu a").click(function () {

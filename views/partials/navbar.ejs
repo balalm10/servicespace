@@ -7,10 +7,10 @@
 
         <div class="collapse navbar-collapse" id="navbarSupportedContent">
             <ul class="navbar-nav ml-auto">
-                <li class="nav-item">
+                <li class="nav-item active">
                     <a class="nav-link" href="/feed">Explore</a>
                 </li>
-                <li class="nav-item active">
+                <li class="nav-item">
                     <% if (isLoggedIn) { %>
                     <% if (profile) { %>
                     <a class="nav-link" href="/logout">Log Out</a>
@@ -25,3 +25,12 @@
         </div>
     </div>
 </nav>
+
+<script>
+    $(document).ready(function () {
+        $('.navbar-nav li.active').removeClass('active');
+        $('.navbar-nav li a[href="' + location.pathname + '"]').closest('li').addClass('active');
+        console.log(location.pathname)
+    });
+
+</script>

@@ -58,7 +58,7 @@
 </style>
 
 <body>
-
+	<%- include('./partials/scripts.ejs') %>
 	<%- include('./partials/navbar.ejs', {isLoggedIn: iLog, profile: false}); %>
 	<%- include('./partials/messages.ejs'); %>
 
@@ -96,11 +96,11 @@
 								placeholder="Password" />
 						</div>
 						<br />
-						<center>
-							<button type="submit" class="btn btn-outline-primary">
+						<div class="text-center">
+							<button type="submit" class="btn btn-outline-primary mx-auto">
 								Log in
 							</button>
-						</center>
+						</div>
 					</form>
 				</div>
 				<div class="tab-pane fade" id="signup_tab">
@@ -136,11 +136,11 @@
 						</div>
 
 						<div class="form-group">
-							<center>
+							<div class="text-center">
 								<span class="form-text mb-2">
 									What will be your role on ServiceSpace?
 								</span>
-							</center>
+							</div>
 
 							<div class="btn-group d-flex btn-group-toggle" data-toggle="buttons" id="sp_checkbox">
 								<label class="btn btn-secondary w-100 active">
@@ -154,17 +154,17 @@
 						</div>
 
 						<div class="form-group" id="sp_form" style="display: none">
-							<center>
+							<div class="text-center">
 								<small class="form-text text-muted">The below section is only for Service
 									Providers.</small>
-							</center>
+							</div>
 							<hr />
-							<center>
+							<div class="text-center">
 								<small class="form-text text-muted mb-2">You'll be able to add services to your profile
 									once
 									you sign up. <br> For now, we only need your official contacts.
 								</small>
-							</center>
+							</div>
 							<div class="form-group form-row">
 								<div class="col">
 									<input type="email" class="form-control" name="email"
@@ -187,18 +187,17 @@
 						</div>
 
 						<br />
-						<center>
+						<div class="text-center">
 							<button type="submit" class="btn btn-outline-primary" id="create_acc_btn">
 								Create Account
 							</button>
-						</center>
+						</div>
 					</form>
 				</div>
 			</div>
 		</div>
 	</div>
 
-	<%- include('./partials/scripts.ejs') %>
 	<!-- For Material Design Bootstrap -->
 	<!-- <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
 	<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.4/umd/popper.min.js"></script>
