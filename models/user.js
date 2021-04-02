@@ -25,6 +25,13 @@ var UserSchema = new mongoose.Schema({
         required: function() {
             return this.utype === 'Service Provider';
         }
+    },
+    social_media: {
+        website: String,
+        facebook: String,
+        twitter: String,
+        linkedin: String,
+        instagram: String
     }
 });
 

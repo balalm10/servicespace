@@ -305,7 +305,7 @@ app.get('/getservices/:user_id', (req, res) => {
         .exec((err, user_obj) => {
             if(err) {
                 console.log(err)
-                res.json({'error': false, 'message': err.message})
+                res.json({'error': true, 'message': err.message})
             } else {
                 if(user_obj.utype === UTYPE.SERVICE_PROVIDER) {
                     res.json({'error': false, 'message': user_obj.spdetails.services})
@@ -315,6 +315,32 @@ app.get('/getservices/:user_id', (req, res) => {
             }
         });
 });
+
+app.put('/socialmedia/:name', (req, res) => {
+
+    console.log(req.body)
+
+    // If stateless call (no session)
+    if (!req.user) {
+        req.user = req.body.user
+    }
+
+    let social_media_name = `social_media.${req.params.name}`
+
+    user.findByIdAndUpdate(req.user._id, { $set: { 
+            [social_media_name] : req.body.handle
+        }
+    }, (err, user_obj) => {
+        if(err) {
+            console.log(err)
+            res.json({'error': true, 'message': err.message})
+        } else {
+            // Update session with new social media handles
+            req.user.social_media = user_obj.social_media
+            res.json({ 'error': false, 'message': user_obj.social_media })
+        }
+    });
+})
 
 const PORT = 3000;
 
