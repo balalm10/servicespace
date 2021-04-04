@@ -9,6 +9,8 @@ const waterfall = require('async-waterfall');
 const path = require('path')
 const LocalStrategy = require('passport-local');
 const bodyParser = require('body-parser');
+const { Router } = require('express');
+const serviceRouter = Router()
 const app = express();
 
 //DB config
@@ -88,16 +90,12 @@ app.get('/', (req, res) => {
 app.get('/signin', isNotLoggedIn, (req, res) => {
     res.set('Cache-Control', 'no-cache, private, no-store, must-revalidate, max-stale=0, post-check=0, pre-check=0');
     res.render('signin', { user: req.user, iLog: req.isAuthenticated() })
-    //res.render('login', {default: 'login'});
 });
 
 app.get('/profile', isLoggedIn, (req, res) => {
     console.log(req.user)
     res.set('Cache-Control', 'no-cache, private, no-store, must-revalidate, max-stale=0, post-check=0, pre-check=0');
     res.render('profile', { user: req.user, iLog: req.isAuthenticated() })
-    // res.send(`<h1>Welcome ${req.user.name}</h1><hr><br>
-    // <p>User Object retrieved from session : ${req.user}<br><br>
-    // <a href='/logout'>Logout</a></p>`)
 })
 
 app.post('/login', isNotLoggedIn, passport.authenticate('local', {
@@ -119,7 +117,6 @@ app.get('/feed', (req, res) => {
         if(err) {
             console.log('Error while fetching services for feed')
         } else {
-            console.log(data)
             res.render('feed', { user: req.user, iLog: req.isAuthenticated(), services: data })
         }
     })
@@ -142,6 +139,9 @@ app.post('/signup', (req, res) => {
             services: [],
             phone: req.body.phone,
             email: req.body.email
+        },
+        watchlist: (req.body.utype === UTYPE.SERVICE_PROVIDER) ? {} : {
+            services: [],
         }
     }),
         req.body.password,
@@ -162,7 +162,7 @@ app.post('/signup', (req, res) => {
         });
 });
 
-app.post('/createservice', (req, res) => {
+serviceRouter.post('/create', (req, res) => {
 
     console.log(req.body)
 
@@ -238,7 +238,7 @@ app.post('/createservice', (req, res) => {
 
 });
 
-app.delete('/removeservice', (req, res) => {
+serviceRouter.delete('/remove', (req, res) => {
 
     console.log(req.body)
 
@@ -299,9 +299,70 @@ app.delete('/removeservice', (req, res) => {
 
 });
 
-app.get('/getservices/:user_id', (req, res) => {
+serviceRouter.put('/addtowl', (req, res) => {
 
-    user.findById(req.params.user_id).populate({path: 'spdetails.services', model: 'Service'})
+    console.log(req.body)
+
+    // If stateless call (no session)
+    if (!req.user) {
+        req.user = req.body.user
+    }
+
+    if(req.user.utype === UTYPE.CUSTOMER) {
+        user.findByIdAndUpdate(req.user._id, 
+            { $addToSet: { 'watchlist.services': mongoose.Types.ObjectId(req.body.service_id)} }, {new: true},
+            (err, user_obj) => {
+            if (err) {
+                console.log(err);
+                res.json({ 'error': true, 'message': 'Could not add service'})
+            }
+            else {
+                console.log('Added Service to Watchlist', user_obj.watchlist.services);
+                req.user.watchlist = user_obj.watchlist
+                res.json({ 'error': false, 'message': 'Added Service to Watchlist'})
+            }
+        });
+    } else {
+        res.json({ 'error': true, 'message': "Service Providers don't have watchlist feature." })
+    }
+});
+
+serviceRouter.delete('/removefromwl', (req, res) => {
+
+    console.log(req.body)
+
+    // If stateless call (no session)
+    if (!req.user) {
+        req.user = req.body.user
+    }
+
+    if(req.user.utype === UTYPE.CUSTOMER) {
+        user.findByIdAndUpdate(req.user._id, 
+            { $pull: { 'watchlist.services': mongoose.Types.ObjectId(req.body.service_id)} }, {new: true})
+            .populate({path: 'watchlist.services', model: 'Service'}).exec((err, user_obj) => {
+                if (err) {
+                    console.log(err);
+                    res.json({ 'error': true, 'message': 'Could not remove service from watchlist'})
+                }
+                else {
+                    console.log('Removed Service from Watchlist');
+                    req.user.watchlist = user_obj.watchlist
+                    res.json({ 'error': false, 'message': user_obj.watchlist.services})
+                }
+            });
+    } else {
+        res.json({ 'error': true, 'message': "Service Providers don't have watchlist feature." })
+    }
+});
+
+
+serviceRouter.get('/getservices/:user_id', (req, res) => {
+
+    // fetches services offered for Service Providers and watchlisted services for Customers (According to user type)
+
+    user.findById(req.params.user_id)
+    .populate({path: 'spdetails.services', model: 'Service'})
+    .populate({path: 'watchlist.services', model: 'Service'})
         .exec((err, user_obj) => {
             if(err) {
                 console.log(err)
@@ -310,7 +371,7 @@ app.get('/getservices/:user_id', (req, res) => {
                 if(user_obj.utype === UTYPE.SERVICE_PROVIDER) {
                     res.json({'error': false, 'message': user_obj.spdetails.services})
                 } else {
-                    res.json({ 'error': true, 'message': 'User is not a Service Provider' })
+                    res.json({ 'error': false, 'message': user_obj.watchlist.services })
                 }
             }
         });
@@ -341,6 +402,8 @@ app.put('/socialmedia/:name', (req, res) => {
         }
     });
 })
+
+app.use('/service', serviceRouter)
 
 const PORT = 3000;
 

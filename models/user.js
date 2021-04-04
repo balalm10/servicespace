@@ -26,6 +26,19 @@ var UserSchema = new mongoose.Schema({
             return this.utype === 'Service Provider';
         }
     },
+    watchlist: {
+        type: {
+            services: [{
+                type:mongoose.Schema.Types.ObjectId,
+                ref :"Service"
+            }]
+        },
+        
+        // Watchlist feature only available to cusomers.
+        required: function() {
+            return this.utype === 'Customer';
+        }
+    },
     social_media: {
         website: String,
         facebook: String,

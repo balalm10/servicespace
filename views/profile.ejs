@@ -10,7 +10,7 @@
 
 <body>
     <%- include('./partials/scripts.ejs') %>
-    <%- include('./partials/navbar.ejs', {isLoggedIn: iLog, profile: true}); %>
+    <%- include('./partials/navbar.ejs', {isLoggedIn: iLog}); %>
     <%- include('./partials/messages.ejs'); %>
 
     <div class="container">
@@ -179,15 +179,17 @@
 
             <!-- Services Offered, only displayed for service providers -->
 
-            <% if (user.utype === 'Service Provider') { %>
             <div class="row gutters-sm">
                 <div class="col mb-3 mt-3">
                     <div class="card h-100">
                         <div class="card-header container-fluid">
+                            <% if (user.utype === 'Service Provider') { %>
                             <h3 class="float-left">Services Offered</h3>
                             <button type="button" class="btn btn-outline-success float-right" data-toggle="modal"
                                 data-target="#addServiceModal">Add</button>
-
+                            <% } else { %>
+                            <h3 class="float-left">Watch List</h3>
+                            <% } %>
                         </div>
                         <div class="card-body align-items-center container-fluid">
                             <div class="d-flex mb-3">
@@ -199,7 +201,7 @@
                     </div>
                 </div>
             </div>
-            <% } %>
+
         </div>
     </div>
 
@@ -310,8 +312,6 @@
                 value = value.replace(/\//g, '')
             }
 
-            console.log(value)
-
             $.ajax({
                 url: `/socialmedia/${name}`,
                 method: 'put',
@@ -352,7 +352,7 @@
                 $("#serviceFee").val('');
 
                 $.ajax({
-                    url: '/createservice',
+                    url: '/service/create',
                     method: 'post',
                     dataType: 'json',
                     data: {
@@ -378,26 +378,53 @@
             $(document).on('click', 'button.remove-service-btn', function () {
 
                 var id = $(this).attr('id')
-                $.ajax({
-                    url: 'removeservice',
-                    method: 'delete',
-                    dataType: 'json',
-                    data: {
-                        'service_id': id
-                    },
-                    success: function (response) {
-                        console.log('Remove Service Response', response);
-                        if (!response.error) {
-                            console.log('Service Removed');
-                            populateServices(response.message);
-                        } else {
-                            console.log('Unable to remove service', response.message);
+                let utype = '<%= (iLog && user) ? user.utype : "Guest" %>'
+
+                if (utype === 'Customer') {
+                    $.ajax({
+                        url: 'service/removefromwl',
+                        method: 'delete',
+                        dataType: 'json',
+                        data: {
+                            'service_id': id
+                        },
+                        success: function (response) {
+                            console.log('Remove Service from watchlist', response);
+                            if (!response.error) {
+                                console.log('Service removed from watchlist');
+                                populateServices(response.message)
+                            } else {
+                                console.log('Unable to remove from watchlist:', response
+                                    .message);
+                            }
+                        },
+                        error: function (response) {
+                            alert('server error occured')
                         }
-                    },
-                    error: function (response) {
-                        alert('server error occured')
-                    }
-                });
+                    });
+                } else {
+                    $.ajax({
+                        url: '/service/remove',
+                        method: 'delete',
+                        dataType: 'json',
+                        data: {
+                            'service_id': id
+                        },
+                        success: function (response) {
+                            console.log('Remove Service Response', response);
+                            if (!response.error) {
+                                console.log('Service Removed');
+                                populateServices(response.message);
+                            } else {
+                                console.log('Unable to remove service', response.message);
+                            }
+                        },
+                        error: function (response) {
+                            alert('server error occured')
+                        }
+                    });
+                }
+
             });
 
             function fetchServices() {
@@ -407,7 +434,7 @@
                 console.log(userid)
 
                 $.ajax({
-                    url: `/getservices/${userid}`,
+                    url: `/service/getservices/${userid}`,
                     method: 'get',
                     success: function (response) {
                         console.log('Got response success', response)
@@ -423,11 +450,18 @@
 
             function populateServices(services) {
 
+                console.log('services', services)
+
                 $('.services-list').empty()
 
+                let utype = '<%- user.utype %>'
+
                 if (services == undefined || services == null || services.length == 0) {
+                    let default_msg = (utype === 'Customer') ?
+                        "Add services to your watchlist from the feed to have quick access to them!" :
+                        "The services you provide will be listed here, create one right now!";
                     $('.services-list').append(
-                        `<li class="list-group-item text-muted">The services you provide will be listed here, create one right now!</li>`
+                        `<li class="list-group-item text-muted">${default_msg}</li>`
                     );
                 } else {
                     services.forEach(service => {
