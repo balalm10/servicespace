@@ -17,6 +17,7 @@ var ServiceSchema = new mongoose.Schema({
         rating: Number
     }],
     avg_rating: Number,
+    watchlisted: Number,
     provider: {
         type:mongoose.Schema.Types.ObjectId,
         ref :"User"

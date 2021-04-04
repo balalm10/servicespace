@@ -191,6 +191,7 @@ serviceRouter.post('/create', (req, res) => {
                 fee_t: req.body.fee_t,
                 ratings: [],
                 avg_rating: 0,
+                watchlisted: 0,
                 provider: req.user._id
             });
             return cb(null, service_obj);
@@ -308,23 +309,55 @@ serviceRouter.put('/addtowl', (req, res) => {
         req.user = req.body.user
     }
 
-    if(req.user.utype === UTYPE.CUSTOMER) {
-        user.findByIdAndUpdate(req.user._id, 
-            { $addToSet: { 'watchlist.services': mongoose.Types.ObjectId(req.body.service_id)} }, {new: true},
-            (err, user_obj) => {
-            if (err) {
-                console.log(err);
-                res.json({ 'error': true, 'message': 'Could not add service'})
+    const addToWatchList = [
+        function verifyUserIsCustomer(cb) {
+            if (req.user.utype === UTYPE.CUSTOMER) {
+                console.log('User is Customer')
+                cb(null);
             }
             else {
-                console.log('Added Service to Watchlist', user_obj.watchlist.services);
-                req.user.watchlist = user_obj.watchlist
-                res.json({ 'error': false, 'message': 'Added Service to Watchlist'})
+                // err: true  (String evaluates to true)
+                cb('User is not a Customer')
             }
-        });
-    } else {
-        res.json({ 'error': true, 'message': "Service Providers don't have watchlist feature." })
-    }
+        },
+        function addServiceToWatchList(cb) {
+            user.findByIdAndUpdate(req.user._id, 
+                { $addToSet: { 'watchlist.services': mongoose.Types.ObjectId(req.body.service_id)} }, {new: true},
+                (err, user_obj) => {
+                if (err) {
+                    console.log(err);
+                    cb(err.message)
+                }
+                else {
+                    console.log('Added Service to Watchlist', user_obj.watchlist.services);
+                    req.user.watchlist = user_obj.watchlist
+                    cb(null, 'Added Service to Watchlist')
+                }
+            });
+        },
+        function incrementWatchlistedCount(message, cb) {
+            service.findByIdAndUpdate(req.body.service_id, { $inc: { 'watchlisted': 1 } }, {new: true}, (err, inc_service) => {
+                if(err) {
+                    console.log("Error",err)
+                    cb(err.message)
+                } else {
+                    console.log(`Watchlisted service: ${inc_service.name}`)
+                    cb(null, message)
+                }
+            })
+        }
+    ];
+
+    waterfall(addToWatchList, function (err, message) {
+        if (err) {
+            console.log('Error in waterfall', err);
+            res.json({ 'error': true, 'message': err })
+            return;
+        }
+        console.log('Success :', 'Added Service to watchlist successfully');
+        res.json({ 'error': false, 'message': message })
+        return;
+    });
 });
 
 serviceRouter.delete('/removefromwl', (req, res) => {
@@ -336,23 +369,55 @@ serviceRouter.delete('/removefromwl', (req, res) => {
         req.user = req.body.user
     }
 
-    if(req.user.utype === UTYPE.CUSTOMER) {
-        user.findByIdAndUpdate(req.user._id, 
-            { $pull: { 'watchlist.services': mongoose.Types.ObjectId(req.body.service_id)} }, {new: true})
-            .populate({path: 'watchlist.services', model: 'Service'}).exec((err, user_obj) => {
-                if (err) {
-                    console.log(err);
-                    res.json({ 'error': true, 'message': 'Could not remove service from watchlist'})
+    const addToWatchList = [
+        function verifyUserIsCustomer(cb) {
+            if (req.user.utype === UTYPE.CUSTOMER) {
+                console.log('User is Customer')
+                cb(null);
+            }
+            else {
+                // err: true  (String evaluates to true)
+                cb('User is not a Customer')
+            }
+        },
+        function RemoveServiceFromWatchList(cb) {
+            user.findByIdAndUpdate(req.user._id, 
+                { $pull: { 'watchlist.services': mongoose.Types.ObjectId(req.body.service_id)} }, {new: true})
+                .populate({path: 'watchlist.services', model: 'Service'}).exec((err, user_obj) => {
+                    if (err) {
+                        console.log(err);
+                        cb(err.message)
+                    }
+                    else {
+                        console.log('Removed Service from Watchlist');
+                        req.user.watchlist = user_obj.watchlist
+                        cb(null, user_obj.watchlist.services)
+                    }
+                });
+        },
+        function decrementWatchlistedCount(services, cb) {
+            service.findByIdAndUpdate(req.body.service_id, { $inc: { 'watchlisted': -1 } }, {new: true}, (err, dec_service) => {
+                if(err) {
+                    console.log("Error",err)
+                    cb(err.message)
+                } else {
+                    console.log(`Removed from watchlist, service: ${dec_service.name}`)
+                    cb(null, services)
                 }
-                else {
-                    console.log('Removed Service from Watchlist');
-                    req.user.watchlist = user_obj.watchlist
-                    res.json({ 'error': false, 'message': user_obj.watchlist.services})
-                }
-            });
-    } else {
-        res.json({ 'error': true, 'message': "Service Providers don't have watchlist feature." })
-    }
+            })
+        }
+    ];
+
+    waterfall(addToWatchList, function (err, services) {
+        if (err) {
+            console.log('Error in waterfall', err);
+            res.json({ 'error': true, 'message': err })
+            return;
+        }
+        console.log('Success :', 'Removed Service from watchlist successfully');
+        res.json({ 'error': false, 'message': services })
+        return;
+    });
 });
 
 
