@@ -173,8 +173,8 @@ serviceRouter.get('/feed/:order/:page', (req, res) => {
         // Call ML API to get data
         res.json({'error': true, 'message': 'API not yet implemented'})
     } else {      
-        // If order is 'highest_rated', sort by avg_rating, else sort by watchlisted (trending)  
-        let field = (req.params.order === 'highest_rated') ? 'avg_rating' : 'watchlisted';
+        // If order is 'highestRated', sort by avg_rating, else sort by watchlisted (trending)  
+        let field = (req.params.order === 'highestRated') ? 'avg_rating' : 'watchlisted';
         service.find().sort( { [field]: -1 } )
         .populate({path: 'provider', model: 'User'}).exec((err, services) => {
             if(err) {
