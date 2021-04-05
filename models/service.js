@@ -13,7 +13,10 @@ var ServiceSchema = new mongoose.Schema({
     },
     ratings: [{
         _id: false,
-        username: String,
+        userid: {
+            type:mongoose.Schema.Types.ObjectId,
+            ref :"User"
+        },
         rating: Number
     }],
     avg_rating: Number,

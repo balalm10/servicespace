@@ -10,6 +10,7 @@ const path = require('path')
 const LocalStrategy = require('passport-local');
 const bodyParser = require('body-parser');
 const { Router } = require('express');
+const { db } = require('./models/service');
 const serviceRouter = Router()
 const app = express();
 
@@ -44,8 +45,9 @@ passport.use(new LocalStrategy(user.authenticate()));
 passport.serializeUser(user.serializeUser());
 passport.deserializeUser(user.deserializeUser());
 
-
-/*------------------------ Authentication Middleware -----------------------*/
+/*------------------------------------------------------------------------------*/
+/*-------------------------- Authentication Middleware -------------------------*/
+/*------------------------------------------------------------------------------*/
 
 function isLoggedIn(req, res, next) {
     if (req.isAuthenticated()) {
@@ -63,7 +65,7 @@ function isNotLoggedIn(req, res, next) {
     res.redirect('/profile');
 }
 
-/*-------------------------------------------------------------------------*/
+/*------------------------------------------------------------------------------*/
 
 // GLOBAL VARS APP SCOPE
 app.use((req, res, next) => {
@@ -80,7 +82,9 @@ const UTYPE = {
     CUSTOMER: 'Customer'
 }
 
+/*------------------------------------------------------------------------------*/
 /*---------------------------------- Website Routes ----------------------------*/
+/*------------------------------------------------------------------------------*/
 
 app.get('/', (req, res) => {
     console.log('Welcome')
@@ -113,6 +117,7 @@ app.get('/logout', isLoggedIn, (req, res) => {
 });
 
 app.get('/feed', (req, res) => {
+    //res.render('feed', { user: req.user, iLog: req.isAuthenticated() })
     service.find({}).populate({path: 'provider', model: 'User'}).exec((err, data) => {
         if(err) {
             console.log('Error while fetching services for feed')
@@ -122,8 +127,9 @@ app.get('/feed', (req, res) => {
     })
 })
 
+/*-------------------------------------------------------------------------------*/
 /*-------------------------------- Stateless Routes -----------------------------*/
-
+/*-------------------------------------------------------------------------------*/
 
 app.post('/signup', (req, res) => {
 
@@ -161,6 +167,26 @@ app.post('/signup', (req, res) => {
             };
         });
 });
+
+serviceRouter.get('/feed/:order/:page', (req, res) => {
+    if (req.params.order === 'personalized') {
+        // Call ML API to get data
+        res.json({'error': true, 'message': 'API not yet implemented'})
+    } else {      
+        // If order is 'highest_rated', sort by avg_rating, else sort by watchlisted (trending)  
+        let field = (req.params.order === 'highest_rated') ? 'avg_rating' : 'watchlisted';
+        service.find().sort( { [field]: -1 } )
+        .populate({path: 'provider', model: 'User'}).exec((err, services) => {
+            if(err) {
+                res.json({'error': true, 'message': err.message})
+            } else {
+                res.json({'error': false, 'message': services})
+            }
+        })
+    }
+})
+
+/*--------------------------------- Services CRUD ----------------------------*/
 
 serviceRouter.post('/create', (req, res) => {
 
@@ -228,7 +254,7 @@ serviceRouter.post('/create', (req, res) => {
 
     waterfall(createService, function (err, services) {
         if (err) {
-            console.log('Error in waterfall', err);
+            console.log('Error in waterfall:', err);
             res.json({ 'error': true, 'message': err })
             return;
         }
@@ -289,7 +315,7 @@ serviceRouter.delete('/remove', (req, res) => {
 
     waterfall(deleteService, function (err, services) {
         if (err) {
-            console.log('Error in waterfall', err);
+            console.log('Error in waterfall:', err);
             res.json({ 'error': true, 'message': err })
             return;
         }
@@ -299,6 +325,179 @@ serviceRouter.delete('/remove', (req, res) => {
     });
 
 });
+
+serviceRouter.put('/rate', (req, res) => {
+
+    console.log(req.body)
+
+    // If stateless call (no session)
+    if (!req.user) {
+        req.user = req.body.user
+    }
+
+    const addRating = [
+        function verifyUserIsCustomer(cb) {
+            if (req.user.utype === UTYPE.CUSTOMER) {
+                console.log('User is Customer')
+                cb(null);
+            }
+            else {
+                // err: true  (String evaluates to true)
+                cb('Only customers can rate services')
+            }
+        },
+        function checkIfAlreadyRated(cb) {
+            service.find({_id: req.body.service_id, 'ratings.userid': req.user._id}).countDocuments((err, count) => {
+                    if (err) {
+                        console.log(err);
+                        cb(err.message)
+                    }
+                    else {
+                        console.log(count)
+                        if(count === 1) {
+                            cb('User has already rated this service')
+                        } else {
+                            cb(null)
+                        }
+                    }
+                });
+        },
+        function addRatingInArray(cb) {
+            service.findByIdAndUpdate(req.body.service_id, 
+                { $addToSet: { 'ratings': {userid:  req.user._id, rating: req.body.rating}} }, { new: true }, (err, service_obj) => {
+                    if (err) {
+                        console.log(err);
+                        cb(err.message)
+                    }
+                    else {
+                        let no_of_ratings = service_obj.ratings.length
+                        service_obj.avg_rating = (service_obj.avg_rating * (no_of_ratings - 1) + req.body.rating) / no_of_ratings
+                        
+                        console.log(`Rating of ${req.body.rating} added to service: ${service_obj.name}`);
+                        console.log(`Average rating: ${service_obj.avg_rating}`)
+
+                        service_obj.save((err, service_obj) => {
+                            if(err) {
+                                console.log(err);
+                                cb(err.message)
+                            } else {
+                                console.log('Updated average rating successfully')
+                                cb(null, service_obj.avg_rating)
+                            }
+                        })
+                    }
+                });
+        }
+    ];
+
+    waterfall(addRating, function (err, avg_rating) {
+        if (err) {
+            console.log('Error in waterfall:', err);
+            res.json({ 'error': true, 'message': err })
+            return;
+        }
+        console.log('Success :', 'Added Rating successfully');
+        res.json({ 'error': false, 'message': avg_rating })
+        return;
+    });
+})
+
+serviceRouter.delete('/rate', (req, res) => {
+
+    console.log(req.body)
+
+    // If stateless call (no session)
+    if (!req.user) {
+        req.user = req.body.user
+    }
+
+    const removeRating = [
+        function verifyUserIsCustomer(cb) {
+            if (req.user.utype === UTYPE.CUSTOMER) {
+                console.log('User is Customer')
+                cb(null);
+            }
+            else {
+                // err: true  (String evaluates to true)
+                cb('Only customers can rate services')
+            }
+        },
+        function checkIfAlreadyRated(cb) {
+            service.find({_id: req.body.service_id, 'ratings.userid': req.user._id}).countDocuments((err, count) => {
+                    if (err) {
+                        console.log(err);
+                        cb(err.message)
+                    }
+                    else {
+                        console.log(count)
+                        if(count === 0) {
+                            cb('User has not rated this service')
+                        } else {
+                            cb(null)
+                        }
+                    }
+                });
+        },
+        function removeRatingFromArray(cb) {
+            service.findByIdAndUpdate(req.body.service_id, 
+                { $pull: { 'ratings': {userid:  mongoose.Types.ObjectId(req.user._id)}} }, { new: true }, (err, service_obj) => {
+                    if (err) {
+                        console.log(err);
+                        cb(err.message)
+                    }
+                    else {
+                        let no_of_ratings = service_obj.ratings.length
+                        service_obj.avg_rating = service_obj.ratings.reduce((total, next) => total + next.rating, 0) / no_of_ratings
+                        console.log(`New Average Rating: ${service_obj.avg_rating}`)
+
+                        service_obj.save((err, service_obj) => {
+                            if(err) {
+                                console.log(err);
+                                cb(err.message)
+                            } else {
+                                console.log('Updated average rating successfully')
+                                cb(null, service_obj.avg_rating)
+                            }
+                        })
+                    }
+                });
+        }
+    ];
+
+    waterfall(removeRating, function (err, avg_rating) {
+        if (err) {
+            console.log('Error in waterfall:', err);
+            res.json({ 'error': true, 'message': err })
+            return;
+        }
+        console.log('Success :', 'Removed Rating successfully');
+        res.json({ 'error': false, 'message': avg_rating })
+        return;
+    });
+})
+
+serviceRouter.get('/getservices/:user_id', (req, res) => {
+
+    // fetches services offered for Service Providers and watchlisted services for Customers (According to user type)
+
+    user.findById(req.params.user_id)
+    .populate({path: 'spdetails.services', model: 'Service'})
+    .populate({path: 'watchlist.services', model: 'Service'})
+        .exec((err, user_obj) => {
+            if(err) {
+                console.log(err)
+                res.json({'error': true, 'message': err.message})
+            } else {
+                if(user_obj.utype === UTYPE.SERVICE_PROVIDER) {
+                    res.json({'error': false, 'message': user_obj.spdetails.services})
+                } else {
+                    res.json({ 'error': false, 'message': user_obj.watchlist.services })
+                }
+            }
+        });
+});
+
+/*------------------------------- Watchlist -----------------------------*/
 
 serviceRouter.put('/addtowl', (req, res) => {
 
@@ -350,7 +549,7 @@ serviceRouter.put('/addtowl', (req, res) => {
 
     waterfall(addToWatchList, function (err, message) {
         if (err) {
-            console.log('Error in waterfall', err);
+            console.log('Error in waterfall:', err);
             res.json({ 'error': true, 'message': err })
             return;
         }
@@ -410,7 +609,7 @@ serviceRouter.delete('/removefromwl', (req, res) => {
 
     waterfall(addToWatchList, function (err, services) {
         if (err) {
-            console.log('Error in waterfall', err);
+            console.log('Error in waterfall:', err);
             res.json({ 'error': true, 'message': err })
             return;
         }
@@ -420,27 +619,7 @@ serviceRouter.delete('/removefromwl', (req, res) => {
     });
 });
 
-
-serviceRouter.get('/getservices/:user_id', (req, res) => {
-
-    // fetches services offered for Service Providers and watchlisted services for Customers (According to user type)
-
-    user.findById(req.params.user_id)
-    .populate({path: 'spdetails.services', model: 'Service'})
-    .populate({path: 'watchlist.services', model: 'Service'})
-        .exec((err, user_obj) => {
-            if(err) {
-                console.log(err)
-                res.json({'error': true, 'message': err.message})
-            } else {
-                if(user_obj.utype === UTYPE.SERVICE_PROVIDER) {
-                    res.json({'error': false, 'message': user_obj.spdetails.services})
-                } else {
-                    res.json({ 'error': false, 'message': user_obj.watchlist.services })
-                }
-            }
-        });
-});
+/*------------------------------ Social Media ----------------------------*/
 
 app.put('/socialmedia/:name', (req, res) => {
 
@@ -467,6 +646,8 @@ app.put('/socialmedia/:name', (req, res) => {
         }
     });
 })
+
+/*-----------------------------------------------------------------------*/
 
 app.use('/service', serviceRouter)
 
