@@ -5,6 +5,15 @@
     <%- include('./partials/common_header.ejs') %>
 
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.4.0/font/bootstrap-icons.css">
+    <style>
+        body,
+        .list-group-item {
+            color: #1a202c;
+            text-align: left;
+            background-color: #e2e8f0;
+        }
+
+    </style>
 </head>
 
 <body>
@@ -12,7 +21,7 @@
     <%- include('./partials/navbar.ejs', {isLoggedIn: iLog}); %>
 
     <div class="container mt-3">
-        <ul class="nav nav-pills d-flex justify-content-center feed-nav" role="tablist">
+        <ul class="nav nav-pills d-flex justify-content-center feed-nav flex-column flex-sm-row" role="tablist">
             <li class="nav-item">
                 <a id="trendingPill" class="nav-link active" href="#pills-trending" data-toggle="pill"
                     role="tab">Trending</a>
@@ -23,20 +32,17 @@
             </li>
             <li class="nav-item">
                 <% if(iLog && user.utype === 'Customer') { %>
-                <a id="personalizedPill" class="nav-link" href="#pills-personalized" data-toggle="pill"
-                    role="tab">Personalized</a>
+                <a id="personalizedPill" title="The more you rate, the more personalized it'll get!" class="nav-link"
+                    href="#pills-personalized" data-toggle="pill" role="tab">Personalized</a>
                 <% } else { %>
                 <div title="Sign in to unlock personalized feed!">
                     <a id="personalizedPill" class="nav-link disabled" href="#pills-personalized" data-toggle="pill"
                         role="tab">Personalized <i class="bi bi-lock-fill"></i></a>
                 </div>
-                <!-- <a id="personalizedPill" title="Sign in to get access to personalized feed!" class="nav-link">
-                    <i class="bi bi-info-circle"></i>
-                </a> -->
                 <% } %>
             </li>
         </ul>
-        <div class="tab-content">
+        <div class="tab-content mt-2">
             <div class="tab-pane fade show active" id="pills-trending" role="tabpanel">
                 <ul class="list-group list-group-flush services-list">
                 </ul>
@@ -76,36 +82,45 @@
                             response.message.forEach(service => {
                                 $(`#pills-${order} ul`).append(
                                     `<li class="list-group-item border-0">
-                                    <div class="card">
-                                        <div class="card-body">
-                                            <div class="d-flex justify-content-between">
-                                                <h4 class="card-title">${service.name}</h4>
-                                                <% if (iLog && user.utype === 'Customer') { %>
-                                                <a id="${service._id}" title="Add to Watchlist" class="btn btn-watchlist p-0">
-                                                    <i class="bi bi-bookmark-heart"></i>
-                                                </a>
-                                                <% } %>
+                                        <div class="card">
+                                            <div class="card-body row">
+                                                <div class="col-sm-5 col-md-4 col-lg-3 col-xl-2 mb-3 mb-sm-0">
+                                                    <img src="img/carpentar.jpg" alt="Admin" class="rounded w-100 h-100">
+                                                </div>
+                                                <div class="col-sm-7 col-md-8 col-lg-9 col-xl-10">
+                                                    <div class="d-flex justify-content-between">
+                                                        <h4 class="card-title">${service.name}</h4>
+                                                        <% if (iLog && user.utype === 'Customer') { %>
+                                                        <a id="${service._id}" title="Add to Watchlist" class="btn btn-watchlist p-0">
+                                                            <i class="bi bi-bookmark-heart"></i>
+                                                        </a>
+                                                        <% } %>
+                                                    </div>
+                                                    <p class="card-text">${service.desc}</p>
+                                                    <h5 class="float-left">&#8377; &nbsp;
+                                                        ${service.fee + ' ' + service.fee_t}
+                                                    </h5>
+                                                    <% if (iLog && user.utype === 'Customer') { %>
+                                                    <a class="btn btn-sm btn-warning float-right" href="www.google.com">Rate!</a>
+                                                    <% } %>
+                                                </div>
                                             </div>
-                                            <p class="card-text">${service.desc}</p>
-                                            <h5 class="float-left">&#8377; &nbsp;
-                                                ${service.fee + ' ' + service.fee_t}
-                                            </h5>
+                                            <div class="card-footer">
+                                                <!-- <img src="https://bootdey.com/img/Content/avatar/avatar7.png" alt="Admin"
+                                                    class="rounded-circle float-left mr-2" width="50"> -->
+                                                <img src="img/favicon.ico" alt="Admin" class="rounded-circle float-left mr-2" width="50">
+                                                <div class="float-left">
+                                                    <a href="www.google.com"><b>${service.provider.name}</b></a>
+                                                    <div class=""><small>Service Provider</small></div>
+                                                </div>
+                                                <div class="float-right text-right">
+                                                    <h5><b>${service.avg_rating} </b><i class="bi bi-star-fill text-warning"></i></h5>
+                                                    <div><small>From ${service.ratings.length} ratings</small></div>
+                                                </div>
+                                            </div>
                                         </div>
-                                        <div class="card-footer">
-                                            <div class="d-flex justify-content-between text-muted">
-                                                <div class="float-left">Service Provider</div>
-                                                <div class="float-right">${service.provider.spdetails.phone}
-                                                </div>
-                                            </div>
-                                            <div class="d-flex justify-content-between text-muted">
-                                                <div class="float-left"><b>${service.provider.name}</b>
-                                                </div>
-                                                <div class="float-right">${service.provider.spdetails.email}
-                                                </div>
-                                            </div>
                                         </div>
-                                    </div>
-                                </li>`)
+                                    </li>`)
                             })
 
                             // Call after services load
