@@ -32,14 +32,18 @@
             </li>
             <li class="nav-item">
                 <% if(iLog && user.utype === 'Customer') { %>
-                <a id="personalizedPill" title="The more you rate, the more personalized it'll get!" class="nav-link"
-                    href="#pills-personalized" data-toggle="pill" role="tab">Personalized</a>
+                <a id="personalizedPill" title="The more services you rate, the more personalized it'll get!"
+                    class="nav-link" href="#pills-personalized" data-toggle="pill" role="tab">Personalized</a>
                 <% } else { %>
-                <div title="Sign in to unlock personalized feed!">
-                    <a id="personalizedPill" class="nav-link disabled" href="#pills-personalized" data-toggle="pill"
-                        role="tab">Personalized <i class="bi bi-lock-fill"></i></a>
-                </div>
-                <% } %>
+                <% if(iLog && user.utype === 'Service Provider') { %>
+                <div title="Only customers have a personalized feed!">
+                    <% } else { %>
+                    <div title="Sign in to unlock personalized feed!">
+                        <% } %>
+                        <a id="personalizedPill" class="nav-link disabled" href="#pills-personalized" data-toggle="pill"
+                            role="tab">Personalized <i class="bi bi-lock-fill"></i></a>
+                    </div>
+                    <% } %>
             </li>
         </ul>
         <div class="tab-content mt-2">
@@ -78,7 +82,10 @@
                     success: function (response) {
                         console.log('Fetched Services', response);
                         if (!response.error) {
-                            $(`#pills-${order} ul`).empty()
+                            // Clear all 3 lists, to prevent duplicate ids
+                            $(`#pills-trending ul`).empty()
+                            $(`#pills-highestRated ul`).empty()
+                            $(`#pills-personalized ul`).empty()
                             response.message.forEach(service => {
                                 $(`#pills-${order} ul`).append(
                                     `<li class="list-group-item border-0">
@@ -197,7 +204,7 @@
                         url: `/service/getservices/${userid}`,
                         method: 'get',
                         success: function (response) {
-                            console.log('Got response success', response)
+                            console.log('Got watchlisted services', response)
                             if (!response.error) {
                                 response.message.forEach(service => {
                                     let elem = $(`#${service._id.toString()}`).find('i.bi')
