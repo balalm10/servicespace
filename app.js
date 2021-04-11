@@ -141,6 +141,7 @@ app.post('/signup', (req, res) => {
         name: req.body.name,
         dob: req.body.dob,
         utype: req.body.utype,
+        avatar: (req.body.avatar) ? req.body.avatar : 0,
         spdetails: (req.body.utype === UTYPE.CUSTOMER) ? {} : {
             services: [],
             phone: req.body.phone,
@@ -661,6 +662,35 @@ app.put('/socialmedia/:name', (req, res) => {
             // Update session with new social media handles
             req.user.social_media = user_obj.social_media
             res.json({ 'error': false, 'message': user_obj.social_media })
+        }
+    });
+})
+
+/*-------------------------------- Avatar -------------------------------*/
+
+app.put('/avatar', (req, res) => {
+
+    console.log(req.body)
+
+    // If stateless call (no session)
+    if (!req.user) {
+        req.user = req.body.user
+    }
+
+    req.body.avatar = parseInt(req.body.avatar)
+
+    console.log(req.body.avatar)
+
+    user.findByIdAndUpdate(req.user._id, 
+        { $set: { avatar : req.body.avatar } }, 
+        { new: true }, (err, user_obj) => {
+        if(err) {
+            console.log(err)
+            res.json({'error': true, 'message': err.message})
+        } else {
+            // Update session with new avatar
+            req.user.avatar = user_obj.avatar
+            res.json({ 'error': false, 'message': user_obj.avatar })
         }
     });
 })

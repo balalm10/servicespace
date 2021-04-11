@@ -63,71 +63,7 @@
         </div>
     </div>
 
-    <div class="modal fade" id="rateServiceModal" tabindex="-1" role="dialog">
-        <div class="modal-dialog modal-dialog-centered" role="document">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="rateServiceModalTitle">Rate this service</h5>
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
-                </div>
-                <div class="modal-body">
-                    <div class="form-group text-center">
-                        <h4 id="serviceName">Title</h4>
-                        <small class="text-muted">Provided by <a id="serviceProviderLink" href="#">Provider</a></small>
-                    </div>
-                    <span id="modalServiceId" style="display:none;">To hold service id</span>
-                    <div class="container d-flex justify-content-center mt-100">
-
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="card rating-card">
-                                    <div class="card-body text-center">
-                                        <h1 class="user-rating">4.5</h1>
-                                        <h5 class="mt-1">Your rating</h5>
-                                        <fieldset class="rating">
-                                            <input type="radio" id="star5" name="rating" value="5" />
-                                            <label class="full" for="star5" title="Awesome - 5 stars"></label>
-                                            <input type="radio" id="star4half" name="rating" value="4.5" />
-                                            <label class="half" for="star4half" title="Pretty good - 4.5 stars"></label>
-                                            <input type="radio" id="star4" name="rating" value="4" />
-                                            <label class="full" for="star4" title="Pretty good - 4 stars"></label>
-                                            <input type="radio" id="star3half" name="rating" value="3.5" />
-                                            <label class="half" for="star3half" title="Meh - 3.5 stars"></label>
-                                            <input type="radio" id="star3" name="rating" value="3" />
-                                            <label class="full" for="star3" title="Meh - 3 stars"></label>
-                                            <input type="radio" id="star2half" name="rating" value="2.5" />
-                                            <label class="half" for="star2half" title="Kinda bad - 2.5 stars"></label>
-                                            <input type="radio" id="star2" name="rating" value="2" />
-                                            <label class="full" for="star2" title="Kinda bad - 2 stars"></label>
-                                            <input type="radio" id="star1half" name="rating" value="1.5" />
-                                            <label class="half" for="star1half" title="Meh - 1.5 stars"></label>
-                                            <input type="radio" id="star1" name="rating" value="1" />
-                                            <label class="full" for="star1" title="Sucks big time - 1 star"></label>
-                                            <input type="radio" id="starhalf" name="rating" value="0.5" />
-                                            <label class="half" for="starhalf"
-                                                title="Sucks big time - 0.5 stars"></label>
-                                        </fieldset>
-                                        <small id="ratingRemoveText" class="mt-1 text-muted">You've already rated this
-                                            service.
-                                            <a href="#">Remove?</a>
-                                        </small>
-
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
-                    <button id="rateServiceModalButton" type="button" class="btn btn-primary"
-                        data-dismiss="modal">Rate</button>
-                </div>
-            </div>
-        </div>
-    </div>
+    <%- include('./modals/rate_service.ejs') %>
 
     <script>
         $(document).ready(function () {
@@ -153,13 +89,14 @@
                             $(`#pills-trending ul`).empty()
                             $(`#pills-highestRated ul`).empty()
                             $(`#pills-personalized ul`).empty()
+
                             response.message.forEach(service => {
                                 $(`#pills-${order} ul`).append(
                                     `<li class="list-group-item border-0">
                                         <div id="${service._id}" class="card">
                                             <div class="card-body row">
                                                 <div class="col-sm-5 col-md-4 col-lg-3 mb-3 mb-sm-0">
-                                                    <img src="img/carpentar.jpg" alt="Admin" class="rounded w-100 h-100">
+                                                    <img src="img/carpentar.jpg" alt="Service" class="rounded img-fluid">
                                                 </div>
                                                 <div class="col-sm-7 col-md-8 col-lg-9">
                                                     <div class="d-flex justify-content-between">
@@ -180,22 +117,19 @@
                                                 </div>
                                             </div>
                                             <div class="card-footer">
-                                                <!-- <img src="https://bootdey.com/img/Content/avatar/avatar7.png" alt="Admin"
-                                                    class="rounded-circle float-left mr-2" width="50"> -->
-                                <img src="img/favicon.ico" alt="Admin" class="rounded-circle float-left mr-2"
-                                    width="50">
-                                <div class="float-left">
-                                    <b><a class="card-sp-name" href="/serviceprovider/${service.provider._id}">${service.provider.name}</a></b>
-                                    <div class=""><small>Service Provider</small></div>
-                                </div>
-                                <div class="float-right text-right">
-                                    <h5><b>${Math.round((service.avg_rating + Number.EPSILON) * 100) / 100} </b><i class="bi bi-star-fill text-warning"></i></h5>
-                                    <div><small>From ${service.ratings.length} ratings</small></div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    </li>`)
+                                                <img src="img/avatars/${String(service.provider.avatar).padStart(2,'0')}.jpg" alt="Avatar" class="rounded-circle float-left mr-2"
+                                                    width="50" height="50">
+                                                <div class="float-left">
+                                                    <b><a class="card-sp-name" href="/serviceprovider/${service.provider._id}">${service.provider.name}</a></b>
+                                                    <div class=""><small>Service Provider</small></div>
+                                                </div>
+                                                <div class="float-right text-right">
+                                                    <h5><b>${Math.round((service.avg_rating + Number.EPSILON) * 100) / 100} </b><i class="bi bi-star-fill text-warning"></i></h5>
+                                                    <div><small>From ${service.ratings.length} ratings</small></div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </li>`)
                             })
 
                             // Call after services load

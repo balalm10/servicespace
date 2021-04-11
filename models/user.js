@@ -11,6 +11,7 @@ var UserSchema = new mongoose.Schema({
         enum: ['Service Provider', 'Customer'],
         default: 'Customer'
     },
+    avatar: { type: Number, default: 0 },
     spdetails : {
         type: {
             services: [{
