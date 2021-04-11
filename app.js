@@ -99,7 +99,7 @@ app.get('/signin', isNotLoggedIn, (req, res) => {
 app.get('/profile', isLoggedIn, (req, res) => {
     console.log(req.user)
     res.set('Cache-Control', 'no-cache, private, no-store, must-revalidate, max-stale=0, post-check=0, pre-check=0');
-    res.render('profile', { user: req.user, iLog: req.isAuthenticated() })
+    res.render('profile', { user: req.user, iLog: req.isAuthenticated(), read_only: false })
 })
 
 app.post('/login', isNotLoggedIn, passport.authenticate('local', {
@@ -117,12 +117,15 @@ app.get('/logout', isLoggedIn, (req, res) => {
 });
 
 app.get('/feed', (req, res) => {
-    //res.render('feed', { user: req.user, iLog: req.isAuthenticated() })
-    service.find({}).populate({path: 'provider', model: 'User'}).exec((err, data) => {
+    res.render('feed', { user: req.user, iLog: req.isAuthenticated() })
+})
+
+app.get('/serviceprovider/:sp_id', (req, res) => {
+    user.findById(req.params.sp_id).populate({path: 'spdetails.services', model: 'Service'}).exec((err, user_obj) => {
         if(err) {
-            console.log('Error while fetching services for feed')
+            console.log('Error while fetching service provider details')
         } else {
-            res.render('feed', { user: req.user, iLog: req.isAuthenticated(), services: data })
+            res.render('profile', { user: user_obj, iLog: req.isAuthenticated(), read_only: true })
         }
     })
 })
