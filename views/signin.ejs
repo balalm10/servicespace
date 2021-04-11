@@ -5,7 +5,15 @@
 	<%- include('./partials/common_header.ejs') %>
 </head>
 <style type="text/css">
+	body,
+	.list-group-item {
+		color: #1a202c;
+		text-align: left;
+		background-color: #e2e8f0;
+	}
+
 	.jumbotron {
+		/* background-color: white; */
 		border-top: 7px solid #272e38;
 		border-left: 1px solid #272e38;
 		border-bottom: 1px solid #272e38;
@@ -48,11 +56,6 @@
 			</li>
 		</ul>
 		<div class="jumbotron">
-			<!-- <div class="row justify-content-center"> -->
-
-			<!-- </div> -->
-			<!-- <div class="container"> -->
-			<!-- <div class="row h-100 justify-content-center"> -->
 			<div class="tab-content">
 				<div class="tab-pane active" id="login_tab">
 					<form action="/login" method="post">
@@ -169,12 +172,6 @@
 			</div>
 		</div>
 	</div>
-
-	<!-- For Material Design Bootstrap -->
-	<!-- <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
-	<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.4/umd/popper.min.js"></script>
-	<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.5.0/js/bootstrap.min.js"></script>
-	<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mdbootstrap/4.19.1/js/mdb.min.js"></script> -->
 
 	<script>
 		function validate() {}

@@ -371,6 +371,7 @@ serviceRouter.put('/rate', (req, res) => {
                     }
                     else {
                         let no_of_ratings = service_obj.ratings.length
+                        req.body.rating = parseInt(req.body.rating)
                         service_obj.avg_rating = (service_obj.avg_rating * (no_of_ratings - 1) + req.body.rating) / no_of_ratings
                         
                         console.log(`Rating of ${req.body.rating} added to service: ${service_obj.name}`);
@@ -447,7 +448,7 @@ serviceRouter.delete('/rate', (req, res) => {
                     }
                     else {
                         let no_of_ratings = service_obj.ratings.length
-                        service_obj.avg_rating = service_obj.ratings.reduce((total, next) => total + next.rating, 0) / no_of_ratings
+                        service_obj.avg_rating = (no_of_ratings === 0) ? 0 : service_obj.ratings.reduce((total, next) => total + next.rating, 0) / no_of_ratings
                         console.log(`New Average Rating: ${service_obj.avg_rating}`)
 
                         service_obj.save((err, service_obj) => {
@@ -475,6 +476,23 @@ serviceRouter.delete('/rate', (req, res) => {
         return;
     });
 })
+
+serviceRouter.get('/rating/:service_id/:user_id', (req, res) => {
+
+    service.findOne({_id: req.params.service_id, 'ratings.userid': req.params.user_id}, (err, service_obj) => {
+        if(err) {
+            console.log(err.message)
+            res.json({"error": true, "message": err.message})
+        } else {
+            if(!service_obj) {
+                res.json({"error": true, "message": 'User has not rated this service'})
+            } else {
+                console.log('User has rated this service')
+                res.json({"error": false, "message": service_obj.ratings.find(rating => rating.userid == req.params.user_id).rating})
+            }
+        }
+    })
+});
 
 serviceRouter.get('/getservices/:user_id', (req, res) => {
 
