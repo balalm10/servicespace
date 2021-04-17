@@ -5,6 +5,7 @@ var ServiceSchema = new mongoose.Schema({
     s_id: Number,
     name: String,
     desc: String,
+    image: String,
     fee: Number,
     fee_t: {
         type: String,
@@ -25,7 +26,6 @@ var ServiceSchema = new mongoose.Schema({
         type:mongoose.Schema.Types.ObjectId,
         ref :"User"
     }
-
 });
 
 ServiceSchema.plugin(AutoIncrement, {inc_field:"s_id"})

@@ -9,23 +9,28 @@ const waterfall = require('async-waterfall');
 const path = require('path')
 const LocalStrategy = require('passport-local');
 const bodyParser = require('body-parser');
+const multer = require('multer')
 const { Router } = require('express');
-const { db } = require('./models/service');
+const { imageFilter, storage } = require('./config/multer')
+const upload = multer({storage: storage, fileFilter: imageFilter})
 const serviceRouter = Router()
 const app = express();
 
-//DB config
+// DB config
 mongoose.connect('mongodb://127.0.0.1/servicespace', { useNewUrlParser: true, useUnifiedTopology: true, useCreateIndex: true, useFindAndModify: false });
 
-//EJS
+// EJS
 app.set('view engine', 'ejs');
-app.use(express.static(__dirname + '/public'))
 
-//BodyParser
+// Static Files
+app.use(express.static(__dirname + '/public'))
+app.use('/uploads', express.static(__dirname + '/uploads'))
+
+// BodyParser
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ 'extended': true }));
 
-//Express Session middleware
+// Express Session middleware
 app.use(session({
     secret: 'ServiceSpace',
     resave: true,
@@ -38,7 +43,7 @@ app.use(session({
 app.use(passport.initialize());
 app.use(passport.session());
 
-// connect flash middleware
+// Connect flash middleware
 app.use(flash());
 
 passport.use(new LocalStrategy(user.authenticate()));
@@ -192,9 +197,10 @@ serviceRouter.get('/feed/:order/:page', (req, res) => {
 
 /*--------------------------------- Services CRUD ----------------------------*/
 
-serviceRouter.post('/create', (req, res) => {
+serviceRouter.post('/create', upload.single('serviceImg'), (req, res) => {
 
     console.log(req.body)
+    console.log(req.file)
 
     // If stateless call (no session)
     if (!req.user) {
@@ -217,6 +223,7 @@ serviceRouter.post('/create', (req, res) => {
             let service_obj = new service({
                 name: req.body.name,
                 desc: req.body.desc,
+                image: (req.file) ? req.file.path : 'uploads/default.png',
                 fee: req.body.fee,
                 fee_t: req.body.fee_t,
                 ratings: [],
@@ -289,7 +296,40 @@ serviceRouter.delete('/remove', (req, res) => {
                 cb('User is not a Service Provider')
             }
         },
-        function removeFromUserDb(cb) {
+        function removeFromWatchlists(cb) {
+            user.aggregate([
+                { 
+                    $addFields: {
+                        'watchlist.services': { 
+                            $filter: {
+                                input: "$watchlist.services",
+                                as: "service",
+                                cond: { $ne: ["$$service", mongoose.Types.ObjectId(req.body.service_id)] }
+                            } 
+                        }
+                    } 
+                },
+                { 
+                    $out: { db: "servicespace", coll: "users" } 
+                }
+            ]).exec((err, users) => {
+                if (err) {
+                    console.log(err)
+                    cb(err.message)
+                } else {
+                    user.updateMany({ utype: UTYPE.SERVICE_PROVIDER }, { $unset: {'watchlist': ""}}, (err, users) => {
+                        if (err) {
+                            console.log(err)
+                            cb(err.message)
+                        } else {
+                            console.log('Removed Service from watchlists successfully')
+                            cb(null)
+                        }
+                    })
+                }
+            })
+        },
+        function removeFromServiceProvider(cb) {
             user.findByIdAndUpdate(req.user._id, 
             { $pull: { 'spdetails.services': mongoose.Types.ObjectId(req.body.service_id)} }, { new: true })
             .populate({path: 'spdetails.services', model: 'Service'}).exec((err, user_obj) => {
@@ -702,6 +742,6 @@ app.put('/avatar', (req, res) => {
 
 app.use('/service', serviceRouter)
 
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, console.log(`Server started on ${PORT}`));
