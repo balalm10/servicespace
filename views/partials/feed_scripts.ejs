@@ -3,28 +3,52 @@
 <script>
     $(document).ready(function () {
 
+        let page = 1;
+
         // Load Trending Services by default
+        clearLists()
         loadServices('trending')
 
         $(document).on('click', '.nav .nav-item a', function () {
             let order = $(this).attr('id').replace('Pill', '')
-            console.log(order)
+            page = 1
+            clearLists()
             loadServices(order)
         })
+
+        // Keep loading for infinite scroll
+        $(window).scroll(function () {
+            if ($(document).height() - $(this).height() == Math.round($(this).scrollTop())) {
+                console.log(page)
+                if (page != -1) {
+                    let order = $(".nav-pills .nav-item .nav-link.active")
+                        .attr('id').replace('Pill', '')
+                    console.log(order)
+                    page++;
+                    loadServices(order)
+                }
+            }
+        });
+
+        function clearLists() {
+            // Clear all 3 lists, to prevent duplicate ids
+            $(`#pills-trending ul`).empty()
+            $(`#pills-highestRated ul`).empty()
+            $(`#pills-personalized ul`).empty()
+        }
 
         function loadServices(order) {
 
             $.ajax({
-                url: `service/feed/${order}/1`,
+                url: `service/feed/${order}/${page}`,
                 method: 'get',
                 success: function (response) {
                     console.log('Fetched Services', response);
                     if (!response.error) {
-                        // Clear all 3 lists, to prevent duplicate ids
-                        $(`#pills-trending ul`).empty()
-                        $(`#pills-highestRated ul`).empty()
-                        $(`#pills-personalized ul`).empty()
-
+                        if (response.message.length === 0) {
+                            // No more services available
+                            page = -1
+                        }
                         response.message.forEach(service => {
                             $(`#pills-${order} ul`).append(
                                 `<li class="list-group-item border-0">
@@ -179,6 +203,7 @@
                         let order = $(".feed-nav").find('.nav-link.active')
                             .attr('id').replace('Pill', '')
                         console.log(order)
+                        clearLists()
                         loadServices(order)
                     } else {
                         console.log('Unable to rate new service', response
@@ -210,6 +235,7 @@
                             .attr('id').replace('Pill', '')
                         console.log(order)
                         $("#rateServiceModal").modal('hide')
+                        clearLists()
                         loadServices(order)
                     } else {
                         console.log('Unable to remove rating', response

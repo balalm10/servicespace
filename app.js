@@ -86,6 +86,7 @@ const UTYPE = {
     SERVICE_PROVIDER: 'Service Provider',
     CUSTOMER: 'Customer'
 }
+const PAGE_SIZE = 4
 
 /*------------------------------------------------------------------------------*/
 /*---------------------------------- Website Routes ----------------------------*/
@@ -178,13 +179,15 @@ app.post('/signup', (req, res) => {
 });
 
 serviceRouter.get('/feed/:order/:page', (req, res) => {
+
     if (req.params.order === 'personalized') {
         // Call ML API to get data
         res.json({'error': true, 'message': 'API not yet implemented'})
     } else {      
         // If order is 'highestRated', sort by avg_rating, else sort by watchlisted (trending)  
         let field = (req.params.order === 'highestRated') ? 'avg_rating' : 'watchlisted';
-        service.find().sort( { [field]: -1 } )
+        service.find( { $or: [ { avg_rating: { $gte: 2 } }, { 'ratings.2': { $exists: false } } ] } )
+        .sort( { [field]: -1 } ).skip((req.params.page - 1) * PAGE_SIZE).limit(PAGE_SIZE)
         .populate({path: 'provider', model: 'User'}).exec((err, services) => {
             if(err) {
                 res.json({'error': true, 'message': err.message})
