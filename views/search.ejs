@@ -11,6 +11,7 @@
         }
 
     </style>
+    <link rel="stylesheet" href="/css/search.css">
     <link rel="stylesheet" href="/css/profile.css">
     <link rel="stylesheet" href="/css/rating.css">
 </head>
@@ -20,101 +21,63 @@
     <%- include('./partials/navbar.ejs', {isLoggedIn: iLog}); %>
 
     <div class="container mt-3">
-        <ul class="nav nav-pills d-flex justify-content-center feed-nav flex-column flex-sm-row" role="tablist">
-            <li class="nav-item">
-                <a id="trendingPill" class="nav-link active" href="#pills-trending" data-toggle="pill"
-                    role="tab">Trending</a>
-            </li>
-            <li class="nav-item">
-                <a id="highestRatedPill" class="nav-link" href="#pills-highestRated" data-toggle="pill"
-                    role="tab">Highest Rated</a>
-            </li>
-            <li class="nav-item">
-                <% if(iLog && user.utype === 'Customer') { %>
-                <a id="personalizedPill" title="The more services you rate, the more personalized it'll get!"
-                    class="nav-link" href="#pills-personalized" data-toggle="pill" role="tab">Personalized</a>
-                <% } else { %>
-                <% if(iLog && user.utype === 'Service Provider') { %>
-                <div title="Only customers have a personalized feed!">
-                    <% } else { %>
-                    <div title="Sign in to unlock personalized feed!">
-                        <% } %>
-                        <a id="personalizedPill" class="nav-link disabled" href="#pills-personalized" data-toggle="pill"
-                            role="tab">Personalized <i class="bi bi-lock-fill"></i></a>
-                    </div>
-                    <% } %>
-            </li>
-        </ul>
-        <div class="tab-content mt-2">
-            <div class="tab-pane fade show active" id="pills-trending" role="tabpanel">
-                <ul class="list-group list-group-flush services-list">
-                </ul>
-            </div>
-            <div class="tab-pane fade" id="pills-highestRated" role="tabpanel">
-                <ul class="list-group list-group-flush services-list">
-                </ul>
-            </div>
-            <div class="tab-pane fade" id="pills-personalized" role="tabpanel">
-                <ul class="list-group list-group-flush services-list">
-                </ul>
-            </div>
+        <form class="search-form mt-5">
+            <input class="search-input" type="search">
+            <i class="bi bi-search"></i>
+        </form>
+        <div id="search-results" role="tabpanel">
+            <ul class="list-group list-group-flush services-list">
+            </ul>
         </div>
     </div>
 
-    <%- include('./partials/rate_service.ejs', {user_obj: user, isLoggedIn: iLog, page: 'feed'}); %>
-    <%- include('./partials/watchlist.ejs', {user_obj: user, isLoggedIn: iLog, page: 'feed'}); %>
+    <%- include('./partials/rate_service.ejs', {user_obj: user, isLoggedIn: iLog, page: 'search'}); %>
+    <%- include('./partials/watchlist.ejs', {user_obj: user, isLoggedIn: iLog, page: 'search'}); %>
 
     <script>
-        let page = 1;
-
         $(document).ready(function () {
 
-            // Load Trending Services by default
-            loadFreshServices('trending')
+            $('.bi-search').click(function () {
+                loadSearchResults()
+            });
 
-            $(document).on('click', '.nav .nav-item a', function () {
-                let order = $(this).attr('id').replace('Pill', '')
-                loadFreshServices(order)
+            $(".search-form").submit(function () {
+                loadSearchResults()
+                return false;
             })
 
-            // Keep loading for infinite scroll
-            $(window).scroll(function () {
-                if ($(document).height() - $(this).height() == Math.round($(this).scrollTop())) {
-                    console.log(page)
-                    if (page != -1) {
-                        let order = $(".nav-pills .nav-item .nav-link.active")
-                            .attr('id').replace('Pill', '')
-                        console.log(order)
-                        page++;
-                        loadServices(order)
-                    }
-                }
-            });
+            loadSearchResults()
         });
 
-        function loadFreshServices(order) {
-            page = 1
-            // Clear all 3 lists, to prevent duplicate ids
-            $(`#pills-trending ul`).empty()
-            $(`#pills-highestRated ul`).empty()
-            $(`#pills-personalized ul`).empty()
-            loadServices(order)
-        }
+        function loadSearchResults() {
+            $(`#search-results ul`).empty()
 
-        function loadServices(order) {
+            let key = $('.search-input').val()
+
+            if (!key) {
+                $(`#search-results ul`).append(
+                    `<li class="list-group-item text-muted text-center">
+                        Your search results will appear here
+                    </li>`
+                )
+                return;
+            }
 
             $.ajax({
-                url: `/service/feed/${order}/${page}`,
+                url: `/service/search/${key}`,
                 method: 'get',
                 success: function (response) {
                     console.log('Fetched Services', response);
                     if (!response.error) {
                         if (response.message.length === 0) {
-                            // No more services available
-                            page = -1
+                            $(`#search-results ul`).append(
+                                `<li class="list-group-item text-muted text-center">
+                                    No search results found for <i>"${key}"</i> 
+                                </li>`
+                            )
                         }
                         response.message.forEach(service => {
-                            $(`#pills-${order} ul`).append(
+                            $(`#search-results ul`).append(
                                 `<li class="list-group-item border-0">
                                         <div id="${service._id}" class="card">
                                             <div class="card-body row">

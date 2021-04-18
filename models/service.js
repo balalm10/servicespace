@@ -30,4 +30,6 @@ var ServiceSchema = new mongoose.Schema({
 
 ServiceSchema.plugin(AutoIncrement, {inc_field:"s_id"})
 
+ServiceSchema.index({ name: 'text', desc: 'text'}, {name: 'Search Index', weights: {name: 5, desc: 2}})
+
 module.exports = mongoose.model("Service", ServiceSchema);

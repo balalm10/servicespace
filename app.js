@@ -126,6 +126,10 @@ app.get('/feed', (req, res) => {
     res.render('feed', { user: req.user, iLog: req.isAuthenticated() })
 })
 
+app.get('/search', (req, res) => {
+    res.render('search', { user: req.user, iLog: req.isAuthenticated() })
+})
+
 app.get('/serviceprovider/:sp_id', (req, res) => {
     user.findById(req.params.sp_id).populate({path: 'spdetails.services', model: 'Service'}).exec((err, user_obj) => {
         if(err) {
@@ -178,6 +182,8 @@ app.post('/signup', (req, res) => {
         });
 });
 
+/*--------------------------------- Services CRUD ----------------------------*/
+
 serviceRouter.get('/feed/:order/:page', (req, res) => {
 
     if (req.params.order === 'personalized') {
@@ -198,7 +204,24 @@ serviceRouter.get('/feed/:order/:page', (req, res) => {
     }
 })
 
-/*--------------------------------- Services CRUD ----------------------------*/
+serviceRouter.get('/search/:key', (req, res) => { 
+
+    console.log('Search for', req.params.key)
+
+    service.find(
+        { $text : { $search : req.params.key } }, 
+        { score : { $meta: "textScore" } }
+    )
+    .sort({ score : { $meta : 'textScore' } })
+    .populate({path: 'provider', model: 'User'}).exec((err, services) => {
+        if(err) {
+            res.json({'error': true, 'message': err.message})
+        } else {
+            res.json({'error': false, 'message': services})
+        }
+    })
+        
+})
 
 serviceRouter.post('/create', upload.single('serviceImg'), (req, res) => {
 

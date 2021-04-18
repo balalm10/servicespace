@@ -137,6 +137,8 @@
                             loadFreshServices(order)
                         } else if (page === 'profile') {
                             fetchServices()
+                        } else if (page === 'search') {
+                            loadSearchResults()
                         }
                     } else {
                         console.log('Unable to rate new service', response
@@ -173,6 +175,8 @@
                             loadFreshServices(order)
                         } else if (page === 'profile') {
                             fetchServices()
+                        } else if (page === 'search') {
+                            loadSearchResults()
                         }
                     } else {
                         console.log('Unable to remove rating', response
