@@ -1,0 +1,42 @@
+/* For Avatar */
+
+.avatar-container {
+    position: relative;
+}
+
+.overlay {
+    border-radius: 50%;
+    height: 150px;
+    width: 150px;
+    position: absolute;
+    top: 0;
+    left: 0;
+    background: rgba(0, 0, 0, 0);
+    transition: background 0.5s ease;
+}
+
+.avatar-container:hover .overlay {
+    display: block;
+    background: rgba(0, 0, 0, .3);
+}
+
+.btn-avatar {
+    position: absolute;
+    width: 100%;
+    left: 0;
+    top: 50%;
+    text-align: center;
+    opacity: 0;
+    transition: opacity .35s ease;
+}
+
+.btn-avatar a {
+    text-align: center;
+    color: white;
+    border: solid 2px white;
+    z-index: 1;
+}
+
+.avatar-container:hover .btn-avatar {
+    opacity: 1;
+}

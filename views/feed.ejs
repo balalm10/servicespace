@@ -3,15 +3,7 @@
 
 <head>
     <%- include('./partials/common_header.ejs') %>
-    <style>
-        .list-group-item {
-            color: #1a202c;
-            text-align: left;
-            background-color: #e2e8f0;
-        }
-
-    </style>
-    <link rel="stylesheet" href="/css/profile.css">
+    <link rel="stylesheet" href="/css/style.css">
     <link rel="stylesheet" href="/css/rating.css">
 </head>
 
@@ -115,7 +107,7 @@
                         }
                         response.message.forEach(service => {
                             $(`#pills-${order} ul`).append(
-                                `<li class="list-group-item border-0">
+                                `<li class="list-group-item service-list-item border-0">
                                         <div id="${service._id}" class="card">
                                             <div class="card-body row">
                                                 <div class="col-sm-5 col-md-4 col-lg-3 mb-3 mb-sm-0">
