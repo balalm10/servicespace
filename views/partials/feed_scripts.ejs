@@ -6,14 +6,20 @@
         let page = 1;
 
         // Load Trending Services by default
-        clearLists()
-        loadServices('trending')
+        loadFreshServices('trending')
+
+        function loadFreshServices(order) {
+            page = 1
+            // Clear all 3 lists, to prevent duplicate ids
+            $(`#pills-trending ul`).empty()
+            $(`#pills-highestRated ul`).empty()
+            $(`#pills-personalized ul`).empty()
+            loadServices(order)
+        }
 
         $(document).on('click', '.nav .nav-item a', function () {
             let order = $(this).attr('id').replace('Pill', '')
-            page = 1
-            clearLists()
-            loadServices(order)
+            loadFreshServices(order)
         })
 
         // Keep loading for infinite scroll
@@ -29,13 +35,6 @@
                 }
             }
         });
-
-        function clearLists() {
-            // Clear all 3 lists, to prevent duplicate ids
-            $(`#pills-trending ul`).empty()
-            $(`#pills-highestRated ul`).empty()
-            $(`#pills-personalized ul`).empty()
-        }
 
         function loadServices(order) {
 
@@ -203,8 +202,7 @@
                         let order = $(".feed-nav").find('.nav-link.active')
                             .attr('id').replace('Pill', '')
                         console.log(order)
-                        clearLists()
-                        loadServices(order)
+                        loadFreshServices(order)
                     } else {
                         console.log('Unable to rate new service', response
                             .message);
@@ -235,8 +233,7 @@
                             .attr('id').replace('Pill', '')
                         console.log(order)
                         $("#rateServiceModal").modal('hide')
-                        clearLists()
-                        loadServices(order)
+                        loadFreshServices(order)
                     } else {
                         console.log('Unable to remove rating', response
                             .message);
