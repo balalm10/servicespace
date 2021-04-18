@@ -6,6 +6,7 @@
 
     <link rel="stylesheet" href="/css/profile.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.4.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="/css/rating.css">
 </head>
 
 <body>
@@ -233,9 +234,11 @@
         </div>
     </div>
 
-    <%- include('./modals/add_service.ejs'); %>
-    <%- include('./modals/link_social_media.ejs'); %>
-    <%- include('./modals/change_avatar.ejs', {user_obj: user}); %>
+    <%- include('./partials/add_service.ejs'); %>
+    <%- include('./partials/link_social_media.ejs'); %>
+    <%- include('./partials/change_avatar.ejs', {user_obj: user}); %>
+    <%- include('./partials/rate_service.ejs', {user_obj: user_org, isLoggedIn: iLog, page: 'profile'}); %>
+    <%- include('./partials/watchlist.ejs', {user_obj: user_org, isLoggedIn: iLog, page: 'profile'}); %>
 
     <script>
         $(document).ready(function () {
@@ -243,63 +246,13 @@
             // Initial data load
             fetchServices();
 
-            $('button.add-service-btn').click(function () {
-                // Get values
-                let name = $("#serviceName").val();
-                let desc = $("#serviceDesc").val();
-                let fee = $("#serviceFee").val();
-                let fee_t = $("#rate-dropdown-button").html().trim();
-                let imageInput = $("#selectServiceImage")
-                let blobImage = (imageInput.val()) ? imageInput[0].files[0] : null;
-
-                if (name === '' || desc === '' || fee === '') {
-                    alert('All fields are mandataory to add services')
-                    return;
-                }
-
-                let formData = new FormData();
-                formData.append('name', name)
-                formData.append('desc', desc);
-                formData.append('fee', fee);
-                formData.append('fee_t', fee_t);
-                formData.append('serviceImg', blobImage);
-
-                // reset fields
-                $("#serviceName").val('');
-                $("#serviceDesc").val('');
-                $("#serviceFee").val('');
-                $("#selectServiceImage").val('');
-
-                $.ajax({
-                    url: '/service/create',
-                    method: 'post',
-                    dataType: 'json',
-                    cache: false,
-                    contentType: false,
-                    processData: false,
-                    data: formData,
-                    success: function (response) {
-                        if (!response.error) {
-                            console.log(response.message)
-                            populateServices(response.message);
-                        } else {
-                            console.log('error', response.message)
-                        }
-                    },
-                    error: function (response) {
-                        alert('server error occured')
-                    }
-                });
-            });
-
-            $(document).on('click', 'button.remove-service-btn', function () {
-
-                var id = $(this).attr('id')
+            $(document).on('click', 'a.remove-service-btn', function () {
+                var id = $(this).attr('id').replace('_remove', '')
                 let utype = '<%= (iLog && user) ? user.utype : "Guest" %>'
 
                 if (utype === 'Customer') {
                     $.ajax({
-                        url: 'service/removefromwl',
+                        url: '/service/removefromwl',
                         method: 'delete',
                         dataType: 'json',
                         data: {
@@ -344,153 +297,96 @@
 
             });
 
-            function fetchServices() {
+        });
 
-                console.log('fetching services from server')
-                let userid = '<%- user._id %>'
-                console.log(userid)
+        function fetchServices() {
 
-                $.ajax({
-                    url: `/service/getservices/${userid}`,
-                    method: 'get',
-                    success: function (response) {
-                        console.log('Got response success', response)
-                        if (!response.error) {
-                            populateServices(response.message)
-                        }
-                    },
-                    error: function (response) {
-                        console.log('Server error while fetching services')
+            console.log('fetching services from server')
+            let userid = '<%- user._id %>'
+            console.log(userid)
+
+            $.ajax({
+                url: `/service/getservices/${userid}`,
+                method: 'get',
+                success: function (response) {
+                    console.log('Got response success', response)
+                    if (!response.error) {
+                        populateServices(response.message)
                     }
-                });
-            }
+                },
+                error: function (response) {
+                    console.log('Server error while fetching services')
+                }
+            });
+        }
 
-            function populateServices(services) {
+        function populateServices(services) {
 
-                console.log('services', services)
+            console.log('services', services)
 
-                $('.services-list').empty()
+            $('.services-list').empty()
 
-                let utype = '<%- user.utype %>'
+            let utype = '<%- user.utype %>'
 
-                if (services == undefined || services == null || services.length == 0) {
-                    let default_msg = (utype === 'Customer') ?
-                        "Add services to your watchlist from the feed to have quick access to them!" :
-                        "The services you provide will be listed here, create one right now!";
+            if (services == undefined || services == null || services.length == 0) {
+                let default_msg = (utype === 'Customer') ?
+                    "Add services to your watchlist from the feed to have quick access to them!" :
+                    "The services you provide will be listed here, create one right now!";
+                $('.services-list').append(
+                    `<li class="list-group-item text-muted">${default_msg}</li>`
+                );
+            } else {
+                services.forEach(service => {
                     $('.services-list').append(
-                        `<li class="list-group-item text-muted">${default_msg}</li>`
-                    );
-                } else {
-                    services.forEach(service => {
-                        $('.services-list').append(
-                            `<li class="list-group-item">
-                                <div class="card">
-                                    <div class="card-body">
-                                        <h4 class="card-title">${service.name}</h4>
-                                        <p class="card-text">${service.desc}</p>
-                                        <h5 class="float-left">&#8377; &nbsp; ${service.fee} ${service.fee_t}</h5>
-                                        <% if (!read_only) { %>
-                                            <button type="button" style="float: right;"
-                                            class="btn btn-danger remove-service-btn" id="${service._id}">Remove</button>
-                                        <% } %>
+                        `<li class="list-group-item border-0">
+                                <div id="${service._id}" class="card">
+                                    <div class="card-body row">
+                                        <div class="col-sm-5 col-md-4 col-lg-3 mb-3 mb-sm-0">
+                                            <img src="/${service.image ? service.image : 'uploads/default.png'}" alt="Service" class="rounded img-fluid">
+                                        </div>
+                                        <div class="col-sm-7 col-md-8 col-lg-9">
+                                            <div class="d-flex justify-content-between">
+                                                <h4 class="card-title">${service.name}</h4>
+                                                <% if (iLog && user_org.utype === 'Customer') { %>
+                                                <a id="${service._id}_wl" title="Add to Watchlist" class="btn btn-watchlist p-0">
+                                                    <i class="bi bi-bookmark-heart"></i>
+                                                </a>
+                                                <% } else if (iLog && !read_only && user_org.utype === 'Service Provider') { %>
+                                                <a id="${service._id}_remove" title="Remove Service" class="btn text-danger remove-service-btn p-0">
+                                                    <i class="bi bi-trash-fill"></i>
+                                                </a>
+                                                <% } %>
+                                            </div>
+                                            <p class="card-text">${service.desc}</p>
+                                            <h5 class="float-left">&#8377; &nbsp;
+                                                ${service.fee + ' ' + service.fee_t}
+                                            </h5>
+                                            <% if (iLog && user_org.utype === 'Customer') { %>
+                                            <a id="${service._id}_rate" class="btn btn-sm btn-warning btn-rate-service float-right">Rate!</a>
+                                            <% } %>
+                                        </div>
+                                    </div>
+                                    <div class="card-footer">
+                                        <img src="/img/avatars/${String(service.provider.avatar).padStart(2,'0')}.jpg" alt="Avatar" class="rounded-circle float-left mr-2"
+                                            width="50" height="50">
+                                        <div class="float-left">
+                                            <b><a class="card-sp-name" href="/serviceprovider/${service.provider._id}">${service.provider.name}</a></b>
+                                            <div class=""><small>Service Provider</small></div>
+                                        </div>
+                                        <div class="float-right text-right">
+                                            <h5><b>${Math.round((service.avg_rating + Number.EPSILON) * 100) / 100} </b><i class="bi bi-star-fill text-warning"></i></h5>
+                                            <div><small>From ${service.ratings.length} ratings</small></div>
+                                        </div>
                                     </div>
                                 </div>
                             </li>`
-                        )
-                    });
-                }
+                    )
+                });
+                // Call after services load
+                highlightWatchlist(
+                    '<%= (iLog && user_org) ? user_org.utype : "Guest" %>')
             }
-
-            $("#rate-dropdown-menu a").click(function () {
-                let val = $(this).text()
-                $("#rate-dropdown-button").html(val);
-            });
-
-            $('.btn-avatar-modal').click(function () {
-                let id = $(this).attr("id")
-
-                let old = $('.btn-avatar-modal.disabled').attr('id')
-
-                $(`#${old}`).removeClass('disabled')
-                $(`#${old}`).text('SELECT')
-
-                $(`#${id}`).addClass('disabled')
-                $(`#${id}`).text('SELECTED')
-            })
-
-            $('.change-avatar-btn').click(function () {
-                let selected = $('.btn-avatar-modal.disabled').attr('id')
-
-                $.ajax({
-                    url: `/avatar`,
-                    method: 'put',
-                    dataType: 'json',
-                    data: {
-                        'avatar': selected
-                    },
-                    success: function (response) {
-                        if (!response.error) {
-                            console.log('new avatar', response.message)
-                            $("#mainAvatarImg").attr('src',
-                                `/img/avatars/${String(response.message).padStart(2,'0')}.jpg`
-                            )
-                        } else {
-                            console.log('error', response.message)
-                        }
-                    },
-                    error: function (response) {
-                        alert('server error occured')
-                    }
-                });
-            })
-
-            $("#social-media-card-outer").on("click", ".btn-social-media", function () {
-                let id = $(this).attr("id")
-                let name = id.replace('Edit', '')
-                let modal = $("#addSocialMediaModal")
-
-                modal.find('.modal-header h5').text(`Update ${name}`)
-                modal.find('.modal-body div div input')
-                    .attr("placeholder", (name === 'website') ? 'Enter website URL' :
-                        `Enter ${name} handle / profile URL`)
-
-                $("#addSocialMediaModal").modal('show')
-            });
-
-            $("button.add-social-media-btn").click(function () {
-                let name = $("#addSocialMediaModalTitle").text().replace('Update', '').trim()
-                    .toLowerCase()
-                let value = $("#social-media-value").val()
-                $("#social-media-value").val('')
-
-                if (name != 'website') {
-                    value = value.replace(/.*\.com/g, '')
-                    value = value.replace(/\/in\//g, '')
-                    value = value.replace(/\//g, '')
-                }
-
-                $.ajax({
-                    url: `/socialmedia/${name}`,
-                    method: 'put',
-                    dataType: 'json',
-                    data: {
-                        'handle': value
-                    },
-                    success: function (response) {
-                        if (!response.error) {
-                            console.log(response.message)
-                            $("#social-media-card-inner").load(window.location.href +
-                                " #social-media-card-inner");
-                        } else {
-                            console.log('error', response.message)
-                        }
-                    },
-                    error: function (response) {
-                        alert('server error occured')
-                    }
-                });
-            });
-        });
+        }
 
     </script>
 </body>

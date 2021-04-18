@@ -38,3 +38,44 @@
         </div>
     </div>
 </div>
+
+<script>
+    $('.btn-avatar-modal').click(function () {
+        let id = $(this).attr("id")
+
+        let old = $('.btn-avatar-modal.disabled').attr('id')
+
+        $(`#${old}`).removeClass('disabled')
+        $(`#${old}`).text('SELECT')
+
+        $(`#${id}`).addClass('disabled')
+        $(`#${id}`).text('SELECTED')
+    })
+
+    $('.change-avatar-btn').click(function () {
+        let selected = $('.btn-avatar-modal.disabled').attr('id')
+
+        $.ajax({
+            url: `/avatar`,
+            method: 'put',
+            dataType: 'json',
+            data: {
+                'avatar': selected
+            },
+            success: function (response) {
+                if (!response.error) {
+                    console.log('new avatar', response.message)
+                    $("#mainAvatarImg").attr('src',
+                        `/img/avatars/${String(response.message).padStart(2,'0')}.jpg`
+                    )
+                } else {
+                    console.log('error', response.message)
+                }
+            },
+            error: function (response) {
+                alert('server error occured')
+            }
+        });
+    })
+
+</script>

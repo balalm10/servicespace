@@ -1,0 +1,95 @@
+<!-- WatchList related scripts-->
+
+<script>
+    $(document).ready(function () {
+
+        $(document).on("click", ".btn-watchlist", function () {
+            let id = $(this).attr('id')
+            let service_id = id.replace('_wl', '')
+            let watchlisted = $(this).find('i.bi').hasClass('bi-bookmark-heart-fill')
+
+            if (watchlisted) {
+                $.ajax({
+                    url: '/service/removefromwl',
+                    method: 'delete',
+                    dataType: 'json',
+                    data: {
+                        'service_id': service_id
+                    },
+                    success: function (response) {
+                        console.log('Remove Service from watchlist', response);
+                        if (!response.error) {
+                            console.log('Service removed from watchlist');
+                            let elem = $(`#${id}`).find('i.bi')
+                            elem.removeClass('bi-bookmark-heart-fill')
+                            elem.addClass('bi-bookmark-heart')
+                            if ('<%= page %>' === 'profile') {
+                                fetchServices()
+                            }
+                        } else {
+                            console.log('Unable to remove from watchlist:', response
+                                .message);
+                        }
+                    },
+                    error: function (response) {
+                        alert('server error occured')
+                    }
+                });
+            } else {
+                $.ajax({
+                    url: '/service/addtowl',
+                    method: 'put',
+                    dataType: 'json',
+                    data: {
+                        'service_id': service_id
+                    },
+                    success: function (response) {
+                        console.log('Add Service to watchlist', response);
+                        if (!response.error) {
+                            console.log(response.message);
+                            let elem = $(`#${id}`).find('i.bi')
+                            elem.removeClass('bi-bookmark-heart')
+                            elem.addClass('bi-bookmark-heart-fill')
+                            if ('<%= page %>' === 'profile') {
+                                fetchServices()
+                            }
+                        } else {
+                            console.log('Unable to add to watchlist:', response
+                                .message);
+                        }
+                    },
+                    error: function (response) {
+                        alert('server error occured')
+                    }
+                });
+            }
+        })
+    });
+
+    function highlightWatchlist(utype) {
+        if (utype === 'Customer') {
+            let userid = '<%- (isLoggedIn && user_obj) ? user_obj._id : null %>'
+            $.ajax({
+                url: `/service/getservices/${userid}`,
+                method: 'get',
+                success: function (response) {
+                    console.log('Got watchlisted services', response)
+                    if (!response.error) {
+                        response.message.forEach(service => {
+                            let elem = $(`#${service._id.toString()}_wl`).find(
+                                'i.bi')
+                            if (elem.length) {
+                                elem.removeClass('bi-bookmark-heart')
+                                elem.addClass('bi-bookmark-heart-fill')
+                            }
+                        });
+                    }
+                },
+                error: function (response) {
+                    console.log('Server error while fetching services')
+                }
+            });
+        }
+    }
+
+</script>

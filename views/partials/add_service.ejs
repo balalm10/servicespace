@@ -57,3 +57,63 @@
         </div>
     </div>
 </div>
+
+<script>
+    $(document).ready(function () {
+
+        $('button.add-service-btn').click(function () {
+            // Get values
+            let name = $("#serviceName").val();
+            let desc = $("#serviceDesc").val();
+            let fee = $("#serviceFee").val();
+            let fee_t = $("#rate-dropdown-button").html().trim();
+            let imageInput = $("#selectServiceImage")
+            let blobImage = (imageInput.val()) ? imageInput[0].files[0] : null;
+
+            if (name === '' || desc === '' || fee === '') {
+                alert('All fields are mandataory to add services')
+                return;
+            }
+
+            let formData = new FormData();
+            formData.append('name', name)
+            formData.append('desc', desc);
+            formData.append('fee', fee);
+            formData.append('fee_t', fee_t);
+            formData.append('serviceImg', blobImage);
+
+            // reset fields
+            $("#serviceName").val('');
+            $("#serviceDesc").val('');
+            $("#serviceFee").val('');
+            $("#selectServiceImage").val('');
+
+            $.ajax({
+                url: '/service/create',
+                method: 'post',
+                dataType: 'json',
+                cache: false,
+                contentType: false,
+                processData: false,
+                data: formData,
+                success: function (response) {
+                    if (!response.error) {
+                        console.log(response.message)
+                        populateServices(response.message);
+                    } else {
+                        console.log('error', response.message)
+                    }
+                },
+                error: function (response) {
+                    alert('server error occured')
+                }
+            });
+        });
+
+        $("#rate-dropdown-menu a").click(function () {
+            let val = $(this).text()
+            $("#rate-dropdown-button").html(val);
+        });
+    });
+
+</script>

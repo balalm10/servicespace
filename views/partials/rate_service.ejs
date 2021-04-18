@@ -1,0 +1,224 @@
+<!-- Rate Service Modal-->
+
+<div class="modal fade" id="rateServiceModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="rateServiceModalTitle">Rate this service</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group text-center">
+                    <h4 id="serviceName">Title</h4>
+                    <small class="text-muted">Provided by <a id="serviceProviderLink" href="#">Provider</a></small>
+                </div>
+                <span id="modalServiceId" style="display:none;">To hold service id</span>
+                <div class="container d-flex justify-content-center mt-100">
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="card rating-card">
+                                <div class="card-body text-center">
+                                    <h1 class="user-rating">4.5</h1>
+                                    <h5 class="mt-1">Your rating</h5>
+                                    <fieldset class="rating">
+                                        <input type="radio" id="star5" name="rating" value="5" />
+                                        <label class="full" for="star5" title="Awesome - 5 stars"></label>
+                                        <input type="radio" id="star4half" name="rating" value="4.5" />
+                                        <label class="half" for="star4half" title="Pretty good - 4.5 stars"></label>
+                                        <input type="radio" id="star4" name="rating" value="4" />
+                                        <label class="full" for="star4" title="Pretty good - 4 stars"></label>
+                                        <input type="radio" id="star3half" name="rating" value="3.5" />
+                                        <label class="half" for="star3half" title="Meh - 3.5 stars"></label>
+                                        <input type="radio" id="star3" name="rating" value="3" />
+                                        <label class="full" for="star3" title="Meh - 3 stars"></label>
+                                        <input type="radio" id="star2half" name="rating" value="2.5" />
+                                        <label class="half" for="star2half" title="Kinda bad - 2.5 stars"></label>
+                                        <input type="radio" id="star2" name="rating" value="2" />
+                                        <label class="full" for="star2" title="Kinda bad - 2 stars"></label>
+                                        <input type="radio" id="star1half" name="rating" value="1.5" />
+                                        <label class="half" for="star1half" title="Meh - 1.5 stars"></label>
+                                        <input type="radio" id="star1" name="rating" value="1" />
+                                        <label class="full" for="star1" title="Sucks big time - 1 star"></label>
+                                        <input type="radio" id="starhalf" name="rating" value="0.5" />
+                                        <label class="half" for="starhalf" title="Sucks big time - 0.5 stars"></label>
+                                    </fieldset>
+                                    <small id="ratingRemoveText" class="mt-1 text-muted">You've already rated this
+                                        service.
+                                        <a href="#">Remove?</a>
+                                    </small>
+
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                <button id="rateServiceModalButton" type="button" class="btn btn-primary"
+                    data-dismiss="modal">Save</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    $(document).ready(function () {
+
+        $(document).on("click", ".btn-rate-service", function () {
+            let id = $(this).attr("id")
+            let service_id = id.replace('_rate', '')
+            let service_card = $(`#${service_id}`)
+            let modal = $("#rateServiceModal")
+
+            $('#modalServiceId').text(service_id)
+
+            let userid = '<%- (isLoggedIn && user_obj) ? user_obj._id : null %>'
+
+            let modal_sname = $("#serviceName")
+            let modal_sp_link = $("#serviceProviderLink")
+            let card_sp_name = service_card.find('.card-sp-name')
+
+            modal_sname.text(service_card.find('.card-title').text())
+            modal_sp_link.text(card_sp_name.text())
+            modal_sp_link.attr("href", `${card_sp_name.attr("href")}`)
+
+            $.ajax({
+                url: `/service/rating/${service_id}/${userid}`,
+                method: 'get',
+                success: function (response) {
+                    console.log('Got rating for service', response)
+                    if (!response.error) {
+                        $('#ratingRemoveText').css('display', 'inline')
+                        $('.rating').prop('disabled', true)
+                        updateRatingStars(response.message)
+                        updateRatingNumber(response.message)
+                        $('#rateServiceModalButton').prop('disabled', true)
+                    } else {
+                        $('#ratingRemoveText').css('display', 'none')
+                        $('.rating').prop('disabled', false)
+                        updateRatingStars(0)
+                        updateRatingNumber(0)
+                        console.log(response.message)
+                    }
+                },
+                error: function (response) {
+                    console.log('Server error while fetching services')
+                }
+            });
+
+            modal.modal('show')
+        });
+
+        $('#rateServiceModalButton').click(function () {
+            let service_id = $('#modalServiceId').text()
+            let rating = $("input[type='radio']:checked").val();
+
+            $.ajax({
+                url: '/service/rate',
+                method: 'put',
+                dataType: 'json',
+                data: {
+                    'service_id': service_id,
+                    'rating': rating
+                },
+                success: function (response) {
+                    console.log('Rated Service response', response);
+                    if (!response.error) {
+                        console.log('New average rating:', response.message);
+                        let page = '<%= page %>'
+                        if (page === 'feed') {
+                            let order = $(".feed-nav").find('.nav-link.active')
+                                .attr('id').replace('Pill', '')
+                            console.log(order)
+                            loadFreshServices(order)
+                        } else if (page === 'profile') {
+                            fetchServices()
+                        }
+                    } else {
+                        console.log('Unable to rate new service', response
+                            .message);
+                    }
+                },
+                error: function (response) {
+                    alert('server error occured')
+                }
+            });
+        })
+
+        $('#ratingRemoveText a').click(function () {
+            let service_id = $('#modalServiceId').text()
+            console.log(service_id)
+
+            $.ajax({
+                url: '/service/rate',
+                method: 'delete',
+                dataType: 'json',
+                data: {
+                    'service_id': service_id
+                },
+                success: function (response) {
+                    console.log('Removed rating response', response);
+                    if (!response.error) {
+                        console.log('New average rating:', response.message);
+                        $("#rateServiceModal").modal('hide')
+                        let page = '<%= page %>'
+                        if (page === 'feed') {
+                            let order = $(".feed-nav").find('.nav-link.active')
+                                .attr('id').replace('Pill', '')
+                            console.log(order)
+                            loadFreshServices(order)
+                        } else if (page === 'profile') {
+                            fetchServices()
+                        }
+                    } else {
+                        console.log('Unable to remove rating', response
+                            .message);
+                    }
+                },
+                error: function (response) {
+                    alert('server error occured')
+                }
+            });
+        })
+
+        $("input[type='radio']").click(function () {
+            var rating = $("input[type='radio']:checked").val();
+            updateRatingNumber(rating)
+        });
+    });
+
+    function updateRatingStars(rating) {
+        if (rating == 0) {
+            $(`#starhalf`).prop('checked', false)
+            for (var i = 1; i <= 4; i++) {
+                $(`#star${i}`).prop('checked', false)
+                $(`#star${i}half`).prop('checked', false)
+            }
+            $(`#star5`).prop('checked', false)
+        } else {
+            $(`#star${(Math.floor(rating) == 0) ? '' : Math.floor(rating)}${(rating == Math.floor(rating)) ? '' : 'half'}`)
+                .prop('checked', true)
+        }
+    }
+
+    function updateRatingNumber(rating) {
+        if (rating == 0) {
+            $(".user-rating").css('display', 'none');
+            $("#rateServiceModalButton").prop('disabled', true)
+        } else {
+            $(".user-rating").css('display', 'inline');
+            $("#rateServiceModalButton").prop('disabled', false)
+            if (rating < 3) {
+                $('.user-rating').css('color', 'red');
+            } else {
+                $('.user-rating').css('color', 'green');
+            }
+            $(".user-rating").text(rating);
+        }
+    }
+
+</script>

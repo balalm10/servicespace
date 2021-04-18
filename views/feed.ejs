@@ -63,9 +63,114 @@
         </div>
     </div>
 
-    <%- include('./modals/rate_service.ejs') %>
+    <%- include('./partials/rate_service.ejs', {user_obj: user, isLoggedIn: iLog, page: 'feed'}); %>
+    <%- include('./partials/watchlist.ejs', {user_obj: user, isLoggedIn: iLog, page: 'feed'}); %>
 
-    <%- include('./partials/feed_scripts.ejs', {isLoggedIn: iLog, user_obj: user}) %>
+    <script>
+        let page = 1;
+
+        $(document).ready(function () {
+
+            // Load Trending Services by default
+            loadFreshServices('trending')
+
+            $(document).on('click', '.nav .nav-item a', function () {
+                let order = $(this).attr('id').replace('Pill', '')
+                loadFreshServices(order)
+            })
+
+            // Keep loading for infinite scroll
+            $(window).scroll(function () {
+                if ($(document).height() - $(this).height() == Math.round($(this).scrollTop())) {
+                    console.log(page)
+                    if (page != -1) {
+                        let order = $(".nav-pills .nav-item .nav-link.active")
+                            .attr('id').replace('Pill', '')
+                        console.log(order)
+                        page++;
+                        loadServices(order)
+                    }
+                }
+            });
+        });
+
+        function loadFreshServices(order) {
+            page = 1
+            // Clear all 3 lists, to prevent duplicate ids
+            $(`#pills-trending ul`).empty()
+            $(`#pills-highestRated ul`).empty()
+            $(`#pills-personalized ul`).empty()
+            loadServices(order)
+        }
+
+        function loadServices(order) {
+
+            $.ajax({
+                url: `/service/feed/${order}/${page}`,
+                method: 'get',
+                success: function (response) {
+                    console.log('Fetched Services', response);
+                    if (!response.error) {
+                        if (response.message.length === 0) {
+                            // No more services available
+                            page = -1
+                        }
+                        response.message.forEach(service => {
+                            $(`#pills-${order} ul`).append(
+                                `<li class="list-group-item border-0">
+                                        <div id="${service._id}" class="card">
+                                            <div class="card-body row">
+                                                <div class="col-sm-5 col-md-4 col-lg-3 mb-3 mb-sm-0">
+                                                    <img src="/${service.image ? service.image : 'uploads/default.png'}" alt="Service" class="rounded img-fluid">
+                                                </div>
+                                                <div class="col-sm-7 col-md-8 col-lg-9">
+                                                    <div class="d-flex justify-content-between">
+                                                        <h4 class="card-title">${service.name}</h4>
+                                                        <% if (iLog && user.utype === 'Customer') { %>
+                                                        <a id="${service._id}_wl" title="Add to Watchlist" class="btn btn-watchlist p-0">
+                                                            <i class="bi bi-bookmark-heart"></i>
+                                                        </a>
+                                                        <% } %>
+                                                    </div>
+                                                    <p class="card-text">${service.desc}</p>
+                                                    <h5 class="float-left">&#8377; &nbsp;
+                                                        ${service.fee + ' ' + service.fee_t}
+                                                    </h5>
+                                                    <% if (iLog && user.utype === 'Customer') { %>
+                                                    <a id="${service._id}_rate" class="btn btn-sm btn-warning btn-rate-service float-right">Rate!</a>
+                                                    <% } %>
+                                                </div>
+                                            </div>
+                                            <div class="card-footer">
+                                                <img src="/img/avatars/${String(service.provider.avatar).padStart(2,'0')}.jpg" alt="Avatar" class="rounded-circle float-left mr-2"
+                                                    width="50" height="50">
+                                                <div class="float-left">
+                                                    <b><a class="card-sp-name" href="/serviceprovider/${service.provider._id}">${service.provider.name}</a></b>
+                                                    <div class=""><small>Service Provider</small></div>
+                                                </div>
+                                                <div class="float-right text-right">
+                                                    <h5><b>${Math.round((service.avg_rating + Number.EPSILON) * 100) / 100} </b><i class="bi bi-star-fill text-warning"></i></h5>
+                                                    <div><small>From ${service.ratings.length} ratings</small></div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </li>`)
+                        })
+
+                        // Call after services load
+                        highlightWatchlist(
+                            '<%= (iLog && user) ? user.utype : "Guest" %>')
+                    } else {
+                        console.log('Unable to fetch feed', response.message);
+                    }
+                },
+                error: function (response) {
+                    alert('server error occured')
+                }
+            });
+        }
+
+    </script>
 
 </body>
 

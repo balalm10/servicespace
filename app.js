@@ -105,7 +105,7 @@ app.get('/signin', isNotLoggedIn, (req, res) => {
 app.get('/profile', isLoggedIn, (req, res) => {
     console.log(req.user)
     res.set('Cache-Control', 'no-cache, private, no-store, must-revalidate, max-stale=0, post-check=0, pre-check=0');
-    res.render('profile', { user: req.user, iLog: req.isAuthenticated(), read_only: false })
+    res.render('profile', { user: req.user, user_org: req.user, iLog: req.isAuthenticated(), read_only: false })
 })
 
 app.post('/login', isNotLoggedIn, passport.authenticate('local', {
@@ -131,7 +131,7 @@ app.get('/serviceprovider/:sp_id', (req, res) => {
         if(err) {
             console.log('Error while fetching service provider details')
         } else {
-            res.render('profile', { user: user_obj, iLog: req.isAuthenticated(), read_only: true })
+            res.render('profile', { user: user_obj, user_org: req.user, iLog: req.isAuthenticated(), read_only: true })
         }
     })
 })
@@ -253,7 +253,7 @@ serviceRouter.post('/create', upload.single('serviceImg'), (req, res) => {
             console.log('Linking Service to SP');
             user.findByIdAndUpdate(req.user._id, 
             { $addToSet: { 'spdetails.services': created_service._id} }, { new: true })
-            .populate({path: 'spdetails.services', model: 'Service'}).exec((err, user_obj) => {
+            .populate({path: 'spdetails.services', model: 'Service', populate: {path: 'provider', model: 'User'}}).exec((err, user_obj) => {
                 if (err) {
                     console.log(err);
                     cb('Could not add service')
@@ -335,7 +335,7 @@ serviceRouter.delete('/remove', (req, res) => {
         function removeFromServiceProvider(cb) {
             user.findByIdAndUpdate(req.user._id, 
             { $pull: { 'spdetails.services': mongoose.Types.ObjectId(req.body.service_id)} }, { new: true })
-            .populate({path: 'spdetails.services', model: 'Service'}).exec((err, user_obj) => {
+            .populate({path: 'spdetails.services', model: 'Service', populate: {path: 'provider', model: 'User'}}).exec((err, user_obj) => {
                 if (err) {
                     console.log(err);
                     cb(err.message)
@@ -418,8 +418,9 @@ serviceRouter.put('/rate', (req, res) => {
                     }
                     else {
                         let no_of_ratings = service_obj.ratings.length
-                        req.body.rating = parseInt(req.body.rating)
-                        service_obj.avg_rating = (service_obj.avg_rating * (no_of_ratings - 1) + req.body.rating) / no_of_ratings
+                        service_obj.avg_rating = (no_of_ratings === 0) ? 0 : service_obj.ratings.reduce((total, next) => total + next.rating, 0) / no_of_ratings
+                        // req.body.rating = parseInt(req.body.rating)
+                        // service_obj.avg_rating = (service_obj.avg_rating * (no_of_ratings - 1) + req.body.rating) / no_of_ratings
                         
                         console.log(`Rating of ${req.body.rating} added to service: ${service_obj.name}`);
                         console.log(`Average rating: ${service_obj.avg_rating}`)
@@ -546,8 +547,8 @@ serviceRouter.get('/getservices/:user_id', (req, res) => {
     // fetches services offered for Service Providers and watchlisted services for Customers (According to user type)
 
     user.findById(req.params.user_id)
-    .populate({path: 'spdetails.services', model: 'Service'})
-    .populate({path: 'watchlist.services', model: 'Service'})
+    .populate({path: 'spdetails.services', model: 'Service', populate: {path: 'provider', model: 'User'}})
+    .populate({path: 'watchlist.services', model: 'Service', populate: {path: 'provider', model: 'User'}})
         .exec((err, user_obj) => {
             if(err) {
                 console.log(err)
