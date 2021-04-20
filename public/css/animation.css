@@ -106,10 +106,10 @@ h2 span:nth-child(9) {
 
 }
 
-.greet span {
+/*.greet span {
 	position: absolute;
 	display: block;
-}
+}*/
 
 .greet span:nth-child(1) {
 	top: 0;
