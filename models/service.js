@@ -1,8 +1,6 @@
 var mongoose = require("mongoose");
-var AutoIncrement = require("mongoose-sequence")(mongoose)
 
 var ServiceSchema = new mongoose.Schema({
-    s_id: Number,
     name: String,
     desc: String,
     image: String,
@@ -27,8 +25,6 @@ var ServiceSchema = new mongoose.Schema({
         ref :"User"
     }
 });
-
-ServiceSchema.plugin(AutoIncrement, {inc_field:"s_id"})
 
 ServiceSchema.index({ name: 'text', desc: 'text'}, {name: 'Search Index', weights: {name: 5, desc: 2}})
 

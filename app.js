@@ -6,7 +6,6 @@ const passport = require('passport');
 const user = require('./models/user');
 const service = require('./models/service');
 const waterfall = require('async-waterfall');
-const path = require('path')
 const LocalStrategy = require('passport-local');
 const bodyParser = require('body-parser');
 const multer = require('multer')
