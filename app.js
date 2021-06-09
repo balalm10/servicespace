@@ -16,7 +16,7 @@ const serviceRouter = Router()
 const app = express();
 
 // DB config
-mongoose.connect('mongodb://127.0.0.1/servicespace', { useNewUrlParser: true, useUnifiedTopology: true, useCreateIndex: true, useFindAndModify: false });
+mongoose.connect('mongodb://127.0.0.1/servicespace_sim', { useNewUrlParser: true, useUnifiedTopology: true, useCreateIndex: true, useFindAndModify: false });
 
 // EJS
 app.set('view engine', 'ejs');
@@ -185,22 +185,22 @@ app.post('/signup', (req, res) => {
 
 serviceRouter.get('/feed/:order/:page', (req, res) => {
 
-    if (req.params.order === 'personalized') {
-        // Call ML API to get data
-        res.json({'error': true, 'message': 'API not yet implemented'})
-    } else {      
-        // If order is 'highestRated', sort by avg_rating, else sort by watchlisted (trending)  
-        let field = (req.params.order === 'highestRated') ? 'avg_rating' : 'watchlisted';
-        service.find( { $or: [ { avg_rating: { $gte: 2 } }, { 'ratings.2': { $exists: false } } ] } )
-        .sort( { [field]: -1 } ).skip((req.params.page - 1) * PAGE_SIZE).limit(PAGE_SIZE)
-        .populate({path: 'provider', model: 'User'}).exec((err, services) => {
-            if(err) {
-                res.json({'error': true, 'message': err.message})
-            } else {
-                res.json({'error': false, 'message': services})
-            }
-        })
-    }
+    // If order is 'highestRated', sort by avg_rating, else sort by watchlisted (trending)
+    // Since both ratings and watchlisted count can be zero, we need to have a definitive order in all scenarios
+    // Hence, we use a primary, secondary and also the service fee as the last resort for sorting.
+    let primaryField = (req.params.order === 'highestRated') ? 'avg_rating' : 'watchlisted';
+    let secondaryField = (req.params.order === 'trending') ? 'avg_rating' : 'watchlisted';
+
+    service.find( { $or: [ { avg_rating: { $gte: 2 } }, { 'ratings.2': { $exists: false } } ] } )
+    .sort( { [primaryField]: -1, [secondaryField]: -1, 'fee': 1 } )
+    .skip((req.params.page - 1) * PAGE_SIZE).limit(PAGE_SIZE)
+    .populate({path: 'provider', model: 'User'}).exec((err, services) => {
+        if(err) {
+            res.json({'error': true, 'message': err.message})
+        } else {
+            res.json({'error': false, 'message': services})
+        }
+    })
 })
 
 serviceRouter.get('/search/:key', (req, res) => { 

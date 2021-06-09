@@ -71,7 +71,9 @@
 
             // Keep loading for infinite scroll
             $(window).scroll(function () {
-                if ($(document).height() - $(this).height() == Math.round($(this).scrollTop())) {
+                let screen_diff = $(document).height() - $(this).height()
+                let scroll_top = $(this).scrollTop()
+                if (screen_diff == Math.floor(scroll_top) || screen_diff == Math.ceil(scroll_top)) {
                     console.log(page)
                     if (page != -1) {
                         let order = $(".nav-pills .nav-item .nav-link.active")
@@ -95,8 +97,19 @@
 
         function loadServices(order) {
 
+            let req_url = `/service/feed/${order}/${page}`
+
+            console.log(order)
+
+            // Call ML API in case of personalized services
+            if (order === 'personalized') {
+                console.log('here')
+                let userid = '<%- (iLog && user && user.utype === "Customer") ? user._id : null %>'
+                req_url = `http://localhost:5000/service?userID=${userid}&page=${page}`
+            }
+
             $.ajax({
-                url: `/service/feed/${order}/${page}`,
+                url: req_url,
                 method: 'get',
                 success: function (response) {
                     console.log('Fetched Services', response);
@@ -151,6 +164,13 @@
                         highlightWatchlist(
                             '<%= (iLog && user) ? user.utype : "Guest" %>')
                     } else {
+                        if (order === 'personalized') {
+                            $(`#pills-${order} ul`).append(
+                                `<li class="list-group-item service-list-item text-muted text-center">
+                                    ${response.message}
+                                </li>`
+                            )
+                        }
                         console.log('Unable to fetch feed', response.message);
                     }
                 },
